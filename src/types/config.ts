@@ -6,7 +6,9 @@ import type {
 
 export interface Command extends ChatInputApplicationCommandData {
 	run: ChatInputHandler;
-	autocomplete: AutocompleteHandler;
+	autocomplete?: AutocompleteHandler;
+}
+export interface GuildCommand extends Command {
 	shouldCreateFor: (id: string) => boolean;
 }
 export type ChatInputHandler = (
