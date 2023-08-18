@@ -1,30 +1,31 @@
 "use strict";
 
-import type { Client } from "discord.js";
+import type { Client, GuildApplicationCommandManager } from "discord.js";
 import type { Config } from "./types/config.js";
+import type { InitOptions } from "./commands/index.js";
 import { statSync } from "node:fs";
-import { reload, commands } from "./commands/index.js";
-import { load as loadOwnerCommands } from "./commands/owner.js";
-export { commands, reload } from "./commands/index.js";
-exports.reloadOwner = () => {
-	if (!ownerManager) return null;
-	const {
-		command: { name },
-		reload,
-	} = require("./commands/owner");
-	return ownerManager.cache.find((cmd) => cmd.name === name).edit(reload());
-};
-exports.guildCommands = require("./commands/guild");
-exports.enums = require("./enums");
+import { commands, init as initCommands, setDefaultDmPermission, specialFolders } from "./commands/index.js";
+import { load as loadOwnerCommands, reload as reloadOwnerCommands, command as ownerCommand } from "./commands/owner.js";
 
-let ownerManager;
+export { commands, reload } from "./commands/index.js";
+export * as guildCommands from "./commands/guild.js";
+export async function reloadOwner() {
+	const { name } = ownerCommand;
+	const command = ownerManager?.cache.find((cmd) => cmd.name === name);
+	if(command) {
+		const newCommand = await reloadOwnerCommands();
+		return newCommand ? command.edit(newCommand) : command.delete();
+	}
+};
+
+let ownerManager: GuildApplicationCommandManager;
 
 export default async function loadCommands(
 	client: Client,
 	{
 		folder = "commands",
 		ownerCommand = "owner",
-		ownerServer,
+		ownerServer: ownerServerId,
 		singleServer,
 		autoSubCommands = true,
 		debug = false,
@@ -38,7 +39,7 @@ export default async function loadCommands(
 	if (middleware && typeof middleware !== "function")
 		throw new TypeError("'middleware' must be a function");
 
-	if (defaultDmPermission) commands.defaultDmPermission = true;
+	if (defaultDmPermission) setDefaultDmPermission(true);
 
 	if (folder.endsWith("/") || folder.endsWith("\\"))
 		folder = folder.slice(0, -1);
@@ -46,45 +47,39 @@ export default async function loadCommands(
 	if (!folder.startsWith("/") && !folder.match(/^[A-Z]:/))
 		folder = `${import.meta.url}/${folder}`;
 
-	if (debug) {
-		if (!singleServer)
-			singleServer = ownerServer
-				? await client.guilds.fetch(ownerServer)
-				: client.guilds.cache.first();
-	}
-	if (singleServer) {
-		singleServer =
-			singleServer === true
-				? client.guilds.cache.first()
-				: await client.guilds.fetch(singleServer);
-		ownerServer = singleServer;
-	}
+	if (singleServer && !ownerServerId)
+		throw new Error("Need to specify the ownerServer is singleServer is set to true.");
 
-	if (ownerServer) {
+	const initOptions: InitOptions = {
+		debug,
+		middleware,
+		autoSubCommands,
+	};
+	if (ownerServerId) {
 		if (ownerSubfolderExists(ownerCommand)) {
-			commands.specialFolders.push(ownerCommand);
-			ownerServer = await client.guilds.fetch(ownerServer);
-			const ownerCmd = require("./commands/owner").load(folder, ownerCommand);
-			if (singleServer) commands.commands[ownerCmdName] = ownerCmd;
-			else ownerServer.commands.set([ownerCmd]);
+			specialFolders.push(ownerCommand);
+			const ownerServer = await client.guilds.fetch(ownerServerId);
+			ownerManager = ownerServer.commands;
+			if(singleServer) initOptions.allAsGuild = ownerServer;
+
+			const ownerCmd = await loadOwnerCommands(folder, { name: ownerCommand });
+			if(ownerCmd) {
+				if (singleServer) commands[ownerCommand] = ownerCmd;
+				else ownerManager.set([ownerCmd]);
+			}
 		}
 	}
 
-	const load = commands.init(client, folder, {
-		debug,
-		singleServer,
-		middleware,
-		autoSubCommands,
-	});
+	const load = initCommands(client, folder, initOptions);
 
 	if (statSync(folder + "/#guild", { throwIfNoEntry: false })?.isDirectory())
-		load.then(() => {
+		load.then(async () => {
 			const {
 				init: initGuildCmds,
 				commands: guildCommands,
-			} = require("./commands/guild");
+			} = await import("./commands/guild.js");
 			initGuildCmds(client, folder + "/#guild", middleware);
-			Object.assign(commands.commands, guildCommands);
+			Object.assign(commands, guildCommands);
 		});
 
 	load.then(() =>
@@ -93,7 +88,7 @@ export default async function loadCommands(
 
 	return load;
 
-	function ownerSubfolderExists(name) {
+	function ownerSubfolderExists(name: string) {
 		if (name === "owner")
 			return statSync(`${folder}/owner`, {
 				throwIfNoEntry: false,
