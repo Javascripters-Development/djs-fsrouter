@@ -30,7 +30,7 @@
 		"discord.js": "~14"
 	},
 	"devDependencies": {
-		"discord.js": "^14.12.1",
+		"discord.js": "^14.13.0",
 		"prettier": "^3.0.2",
 		"typescript": "^5.1.6"
 	}
