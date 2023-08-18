@@ -4,6 +4,8 @@ import {
 	ApplicationCommandType,
 	type ApplicationCommandSubCommandData,
 } from "discord.js";
+const { Subcommand, SubcommandGroup } = ApplicationCommandOptionType;
+const { ChatInput } = ApplicationCommandType;
 import type { Command, AutocompleteHandler } from "../types/config.js";
 
 export const NAME_REGEX = /^[-_\p{L}\p{N}\p{sc=Deva}\p{sc=Thai}]{1,32}$/u;
@@ -27,19 +29,16 @@ export default function checkCommand(
 	if (name !== name.toLowerCase())
 		throw new LoadError(name, "Command names must be lowercase.");
 
-	const { description, type = ApplicationCommandType.ChatInput } = command;
+	const { description, type = ChatInput } = command;
 
 	if (
 		"run" in command &&
 		typeof command.run !== "function" &&
-		type !== ApplicationCommandOptionType.Subcommand
+		type !== Subcommand
 	)
 		throw new LoadError(name, "Missing a 'run' function.");
 
-	if (
-		type === ApplicationCommandType.ChatInput ||
-		type === ApplicationCommandOptionType.Subcommand
-	) {
+	if (type === ChatInput || type === Subcommand) {
 		if (!description) throw new LoadError(name, `Missing description.`);
 		if (typeof description !== "string")
 			throw new LoadError(name, "The description must be a string.");
@@ -74,13 +73,14 @@ function checkOptions(
 	if (!options.length) return;
 
 	const firstIsSubcmd =
-		options[0].type === ApplicationCommandOptionType.Subcommand ||
-		options[0].type == ApplicationCommandOptionType.SubcommandGroup;
+		options[0].type === Subcommand
+		|| options[0].type === SubcommandGroup;
+
 	for (const option of options) {
 		const { type, name, description } = option;
 		const isSubCmd =
-			type === ApplicationCommandOptionType.Subcommand ||
-			type === ApplicationCommandOptionType.SubcommandGroup;
+			type === Subcommand
+			|| type === SubcommandGroup;
 		if (firstIsSubcmd !== isSubCmd)
 			throw new LoadError(
 				cmdName,
@@ -104,7 +104,7 @@ function checkOptions(
 				`Option ${name}'s description is too long (${description.length}/100).`,
 			);
 
-		if (type === ApplicationCommandOptionType.SubcommandGroup) {
+		if (type === SubcommandGroup) {
 			const { options: subCommands } = option;
 			if (!subCommands?.length)
 				throw new LoadError(
@@ -114,7 +114,7 @@ function checkOptions(
 			if (
 				subCommands.some(
 					({ type }: { type: ApplicationCommandOptionType }) =>
-						type !== ApplicationCommandOptionType.Subcommand,
+						type !== Subcommand,
 				)
 			)
 				throw new LoadError(
@@ -122,7 +122,7 @@ function checkOptions(
 					`Subcommand group options can only be subcommands.`,
 				);
 			subCommands.forEach(checkCommand);
-		} else if (type === ApplicationCommandOptionType.Subcommand)
+		} else if (type === Subcommand)
 			checkCommand(option);
 		else if (option.autocomplete) {
 			if (!autocompleteHandler)
