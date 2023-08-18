@@ -1,12 +1,27 @@
 import type {
 	ChatInputCommandInteraction,
 	ChatInputApplicationCommandData,
+	ApplicationCommandSubCommandData,
+	ApplicationCommandSubGroupData,
 	AutocompleteInteraction,
 } from "discord.js";
 
 export interface Command extends ChatInputApplicationCommandData {
 	run: ChatInputHandler;
 	autocomplete?: AutocompleteHandler;
+	subfolder: string;
+}
+export interface SubcommandGroup extends ApplicationCommandSubGroupData {
+	subcommands: { [name: string]: Subcommand };
+}
+export interface Subcommand extends Omit<ApplicationCommandSubCommandData, "autocomplete"> {
+	run: ChatInputHandler;
+	autocomplete?: boolean | AutocompleteHandler;
+	autocompleteHandler?: AutocompleteHandler;
+}
+export interface CommandGroup extends Command {
+	subcommandGroups: { [name: string]: SubcommandGroup };
+	subcommands: { [name: string]: Subcommand };
 }
 export interface GuildCommand extends Command {
 	shouldCreateFor: (id: string) => boolean;

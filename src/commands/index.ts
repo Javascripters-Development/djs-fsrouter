@@ -1,31 +1,36 @@
 "use strict";
 
-/** Information expected from each command file:
- * description
- * run
- ** Optional:
- * global
- * options
- * autocomplete
- * defaultMemberPermissions
- */
+import {
+	Client, ApplicationCommandManager,
+	Guild, GuildApplicationCommandManager,
+	ApplicationCommandOptionType,
+	ApplicationCommandOptionData,
+	ChatInputCommandInteraction, AutocompleteInteraction,
+} from "discord.js";
+const { Subcommand, SubcommandGroup } = ApplicationCommandOptionType;
+import type { Command, CommandGroup, Subcommand, SubcommandGroup } from "../types/config.js";
 
-const { readdirSync, existsSync } = require("fs");
+import { readdirSync, existsSync } from "node:fs";
 var skipDebug = true;
-var defaultManager, root, middleware, foldersAreGroups;
+var defaultManager: ApplicationCommandManager | GuildApplicationCommandManager;
+var root: string;
+var middleware: ((inputCommand: Command) => Command)[];
+var foldersAreGroups: boolean;
+var defaultDmPermission = false;
 
-const checkCommand = require("./check.function");
-const { LoadError } = checkCommand;
-const { SUBCOMMAND, SUBCOMMAND_GROUP } = require("../enums");
+import checkCommand, { LoadError } from "./check.function.js";
 
-const commands = (exports.commands = {});
-const specialFolders = (exports.specialFolders = []);
-exports.load = load;
-exports.reload = reload;
-
-exports.DEFAULT_DM_PERMISSION = false;
-
+export const specialFolders: Array<string> = [];
+export const commands: { [name: string]: Command; } = {};
 Object.defineProperty(commands, "$reload", { value: reload });
+
+export type InitOptions = {
+	debug: boolean,
+	autoSubCommands: boolean,
+	defaultDmPermission: boolean,
+	allAsGuild?: Guild,
+	middleware: typeof middleware,
+};
 
 /**
  * Load all the commands to Discord.
@@ -38,26 +43,31 @@ Object.defineProperty(commands, "$reload", { value: reload });
  * @param {function} options.middleware (optional) A function to run on the commands just before they are sent to Discord.
  * @returns {Promise <Collection <Snowflake, ApplicationCommand>>}
  */
-exports.init = (
-	client,
-	folder,
+export function init(
+	client: Client,
+	folder: string,
 	{
 		debug = false,
-		allAsGuild = null,
-		autoSubCommands,
-		middleware: _middleware,
-	},
-) => {
+		autoSubCommands = true,
+		allAsGuild,
+		middleware: _middleware = [],
+	}: Partial<InitOptions> = {},
+) {
 	skipDebug = !debug;
 	root = folder;
 	middleware = _middleware;
 	foldersAreGroups = autoSubCommands;
-	const { commands: commandManager } = allAsGuild || client.application;
-	defaultManager = commandManager;
-	return loadFolder(folder, commandManager);
+	const { commands: commandManager } = allAsGuild || client.application || {};
+	if(commandManager) {
+		defaultManager = commandManager;
+		loadFolder(folder);
+		return commandManager.set(Object.values(commands));
+	} else {
+		return Promise.reject("Couldn't get a command manager.");
+	}
 };
 
-function loadFolder(path, commandManager) {
+async function loadFolder(path: string) {
 	const subfolder = path.substring(root.length + 1);
 
 	for (const file of readdirSync(path, { withFileTypes: true })) {
@@ -68,85 +78,82 @@ function loadFolder(path, commandManager) {
 		)
 			continue;
 
-		if (name.endsWith(".js") && file.isFile()) load(name, subfolder);
+		if (file.isFile() && (name.endsWith(".js") || name.endsWith(".ts"))) load(name, subfolder);
 		else if (file.isDirectory()) {
-			if (foldersAreGroups && name !== "#debug") createCommandGroup(name);
+			if (foldersAreGroups && name !== "#debug") await createCommandGroup(name);
 			else loadFolder(`${path}/${name}`);
 		}
 	}
-
-	if (commandManager) return commandManager.set(Object.values(commands));
 }
 
-function load(name, subfolder = "", reloadIfExists = false) {
-	if (typeof name !== "string") throw new TypeError("'name' must be a string");
-
-	if (name.endsWith(".js")) name = name.slice(0, -3);
+export async function load(name: string, subfolder = "", reloadIfExists = false) {
+	if (name.endsWith(".js") || name.endsWith(".ts")) name = name.slice(0, -3);
 
 	const file = `${root}/${subfolder}${subfolder ? "/" : ""}${name}.js`;
 
 	if (commands[name]) {
-		if (commands[name].module !== subfolder)
+		if (commands[name].subfolder !== subfolder)
 			throw new LoadError(
 				name,
-				`Can't load command ${name} of subfolder "${subfolder}", it already exists in module "${commands[name].module}"`,
+				`Can't load command ${name} of subfolder "${subfolder}", it already exists in subfolder "${commands[name].subfolder}"`,
 			);
 
-		if (reloadIfExists) delete require.cache[require.resolve(file)];
-		else return commands[name];
+		if (!reloadIfExists) return commands[name];
 	}
 
-	const command = require(file);
-	command.module = subfolder;
-	middleware?.(name, command);
-	command.name = name;
-	if (!command.options) command.options = []; // So we can remove options
-	if (!("dmPermission" in command))
-		command.dmPermission = exports.DEFAULT_DM_PERMISSION;
-
+	let command: Command = {
+		options: [],
+		dmPermission: defaultDmPermission,
+		...(await import(file)).default,
+		subfolder,
+		name,
+	};
+	for(const func of middleware) command = func(command);
 	checkCommand(command);
 	return (commands[name] = command);
 }
 
-export function reload(cmdName, subfolder = "", cmdManager = defaultManager) {
-	let cmd;
-	if (foldersAreGroups && !existsSync(`${root}/${subfolder}/${cmdName}.js`)) {
-		uncacheCommandFolder(cmdName);
-		cmd = createCommandGroup(cmdName);
-	} else cmd = load(cmdName, subfolder, true);
+export async function reload(cmdName: string, subfolder = "", cmdManager = defaultManager) {
+	const cmd = foldersAreGroups && !existsSync(`${root}/${subfolder}/${cmdName}.js`)
+		? await createCommandGroup(cmdName)
+		: await load(cmdName, subfolder, true);
 	return (
 		cmdManager.cache.find(({ name }) => name === cmdName)?.edit(cmd) ||
 		cmdManager.create(cmd)
 	);
 }
 
-function createCommandGroup(cmdName) {
+async function createCommandGroup(cmdName: string) {
 	const path = `${root}/${cmdName}`;
-	const cmd = existsSync(`${path}/#info.js`)
-		? require(`${path}/#info.js`)
-		: { description: `/${cmdName}` };
-	const options = [];
-	const subcommands = {};
-	const subcommandGroups = {};
-	Object.assign(cmd, {
+	const options: (Subcommand | SubcommandGroup)[] = [];
+	const subcommands: { [name: string]: Subcommand } = {};
+	const subcommandGroups: { [name: string]: SubcommandGroup } = {};
+	const cmd: CommandGroup = {
+		...(existsSync(`${path}/#info.js`)
+			? (await import(`${path}/#info.js`)).default
+			: { description: `/${cmdName}` }),
 		name: cmdName,
 		options,
 		subcommands,
 		subcommandGroups,
 		run: runCommandGroup,
-	});
+	};
 
 	for (const file of readdirSync(path, { withFileTypes: true })) {
 		let { name } = file;
 		if (name[0] === "#") continue;
 
-		if (file.isDirectory()) options.push(createSubCommandGroup(cmdName, name));
-		else if (name.endsWith(".js")) {
-			name = name.slice(0, -3);
-			const subCmd = Object.assign(require(`${path}/${name}.js`), {
-				name,
-				type: SUBCOMMAND,
-			});
+		if (file.isDirectory()) {
+			const group = await createSubCommandGroup(cmdName, name);
+			options.push(group);
+			subcommandGroups[name] = group;
+		}
+		else if (name.endsWith(".js") || name.endsWith(".ts")) {
+			const subCmd: Subcommand = {
+				...(await import(`${path}/${name}`)).default,
+				name: name.slice(0, -3),
+				type: Subcommand,
+			};
 			if (typeof subCmd.run !== "function")
 				throw new LoadError(
 					cmdName,
@@ -163,7 +170,7 @@ function createCommandGroup(cmdName) {
 	return cmd;
 }
 
-function createSubCommandGroup(parent, groupName) {
+async function createSubCommandGroup(parent: string, groupName: string) {
 	const path = `${root}/${parent}/${groupName}`;
 	if (existsSync(`${path}/#info.js`))
 		throw new LoadError(
@@ -171,17 +178,17 @@ function createSubCommandGroup(parent, groupName) {
 			`Subfolder ${groupName} is missing a #info.js file.`,
 		);
 
-	const group = existsSync(`${path}/#info.js`)
-		? require(`${path}/#info.js`)
-		: { description: `/${parent} ${groupName}` };
-	const options = [];
-	const subcommands = {};
-	Object.assign(group, {
+	const options: Subcommand[] = [];
+	const subcommands: { [name: string]: Subcommand } = {};
+	const group: SubcommandGroup = {
+		...(existsSync(`${path}/#info.js`)
+			? (await import(`${path}/#info.js`)).default
+			: { description: `/${parent} ${groupName}` }),
 		name: groupName,
-		type: SUBCOMMAND_GROUP,
+		type: SubcommandGroup,
 		options,
 		subcommands,
-	});
+	};
 
 	for (const file of readdirSync(path, { withFileTypes: true })) {
 		let { name } = file;
@@ -194,11 +201,7 @@ function createSubCommandGroup(parent, groupName) {
 			);
 
 		if (name.endsWith(".js")) {
-			name = name.slice(0, -3);
-			const subCmd = Object.assign(require(`${path}/${name}.js`), {
-				name,
-				type: SUBCOMMAND,
-			});
+			const subCmd = await createSubCommand(path, name);
 			if (typeof subCmd.run !== "function")
 				throw new LoadError(
 					name,
@@ -213,38 +216,52 @@ function createSubCommandGroup(parent, groupName) {
 	return group;
 }
 
-function runCommandGroup(interaction) {
-	const { options } = interactions;
-	const group = options.getSubcommandGroup();
-	const subcmd = options.getSubcommand();
-	let subcommands;
-	if (group) {
-		if (group in this.subcommandGroups)
-			subcommands = this.subcommandGroups.subcommands;
-		else
-			return console.error(
-				`Received unknown subcommand group: '/${this.name} ${group}'`,
-			);
-	} else subcommands = this.subcommands;
-
-	if (subcmd in subcommands) subcommands[subcmd].run(inter);
-	else
-		console.error(
-			`Received unknown subcommand: '/${this.name} ${group || ""} ${subcmd}'`,
+async function createSubCommand(directory: string, name: string): Promise<Subcommand> {
+	const subcommandData: Omit<Subcommand, "autocompleteHandler"> = await import(`${directory}/${name}`)
+	const { autocomplete } = subcommandData;
+	name = name.slice(0, -3);
+	if(typeof autocomplete !== "function")
+		throw new LoadError(
+			name,
+			`Subcommand autocomplete must be a function.`,
 		);
+	return {
+		...subcommandData,
+		name,
+		type: Subcommand,
+		autocompleteHandler: autocomplete,
+		autocomplete: !!autocomplete,
+	};
 }
 
-function uncacheCommandFolder(folder) {
-	const path = `${root}/${folder}`;
-	if (existsSync(`${path}/#info.js`))
-		delete require.cache[require.resolve(`${path}/#info.js`)];
 
-	for (const file of readdirSync(path, { withFileTypes: true })) {
-		let { name } = file;
-		if (name[0] === "#") continue;
+function runCommandGroup(this: CommandGroup, interaction: ChatInputCommandInteraction)
+{
+	getSubcommand(this, interaction).run(interaction);
+}
 
-		if (file.isDirectory()) uncacheCommandFolder(`${folder}/${name}`);
-		else if (name.endsWith(".js"))
-			delete require.cache[require.resolve(`${path}/${name}`)];
+function commandGroupAutocomplete(this: CommandGroup, interaction: AutocompleteInteraction)
+{
+	getSubcommand(this, interaction).autocompleteHandler?.(interaction);
+}
+
+function getSubcommand(commandGroup: CommandGroup, {options}: ChatInputCommandInteraction | AutocompleteInteraction)
+{
+	const group = options.getSubcommandGroup();
+	const subcmd = options.getSubcommand();
+	let subcommands: { [name: string]: Subcommand };
+	if(group)
+	{
+		if(group in commandGroup.subcommandGroups)
+			subcommands = commandGroup.subcommandGroups[group].subcommands;
+		else
+			throw new Error(`Received unknown subcommand group: '/${commandGroup.name} ${group}'`);
 	}
+	else
+		subcommands = commandGroup.subcommands;
+
+	if(subcmd in subcommands)
+		return subcommands[subcmd];
+	else
+		throw new Error(`Received unknown subcommand: '/${commandGroup.name} ${group || ""} ${subcmd}'`);
 }
