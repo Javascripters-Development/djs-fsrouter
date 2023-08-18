@@ -4,7 +4,7 @@ import type { Client, GuildApplicationCommandManager } from "discord.js";
 import type { Config } from "./types/config.js";
 import type { InitOptions } from "./commands/index.js";
 import { statSync } from "node:fs";
-import { commands, init as initCommands, setDefaultDmPermission, specialFolders } from "./commands/index.js";
+import { commands, init as initCommands, specialFolders } from "./commands/index.js";
 import { load as loadOwnerCommands, reload as reloadOwnerCommands, command as ownerCommand } from "./commands/owner.js";
 
 export { commands, reload } from "./commands/index.js";
@@ -29,7 +29,7 @@ export default async function loadCommands(
 		singleServer,
 		autoSubCommands = true,
 		debug = false,
-		defaultDmPermission,
+		defaultDmPermission = false,
 		middleware,
 	}: Config = {},
 ) {
@@ -38,8 +38,6 @@ export default async function loadCommands(
 
 	if (middleware && typeof middleware !== "function")
 		throw new TypeError("'middleware' must be a function");
-
-	if (defaultDmPermission) setDefaultDmPermission(true);
 
 	if (folder.endsWith("/") || folder.endsWith("\\"))
 		folder = folder.slice(0, -1);
@@ -54,6 +52,7 @@ export default async function loadCommands(
 		debug,
 		middleware,
 		autoSubCommands,
+		defaultDmPermission,
 	};
 	if (ownerServerId) {
 		if (ownerSubfolderExists(ownerCommand)) {
