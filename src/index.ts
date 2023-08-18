@@ -30,14 +30,14 @@ export default async function loadCommands(
 		autoSubCommands = true,
 		debug = false,
 		defaultDmPermission = false,
-		middleware,
+		middleware = [],
 	}: Config = {},
 ) {
 	if (!statSync(folder).isDirectory())
 		throw new TypeError("'folder' must be a path to a folder");
 
-	if (middleware && typeof middleware !== "function")
-		throw new TypeError("'middleware' must be a function");
+	if (middleware && typeof middleware === "function")
+		middleware = [middleware];
 
 	if (folder.endsWith("/") || folder.endsWith("\\"))
 		folder = folder.slice(0, -1);

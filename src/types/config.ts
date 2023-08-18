@@ -17,6 +17,7 @@ export type ChatInputHandler = (
 export type AutocompleteHandler = (
 	interaction: AutocompleteInteraction,
 ) => void;
+export type Middleware = ((inputCommand: Command) => Command)[] | ((inputCommand: Command) => Command);
 export interface InternalConfig {
 	folder: string;
 	ownerCommand: string;
@@ -25,6 +26,6 @@ export interface InternalConfig {
 	autoSubCommands: boolean;
 	debug: boolean;
 	defaultDmPermission: boolean;
-	middleware: ((inputCommand: Command) => Command)[];
+	middleware: Middleware;
 }
 export type Config = Partial<InternalConfig>;
