@@ -3,6 +3,7 @@ import type {
 	ChatInputApplicationCommandData,
 	AutocompleteInteraction,
 } from "discord.js";
+
 export interface Command extends ChatInputApplicationCommandData {
 	run: ChatInputHandler;
 	autocomplete: AutocompleteHandler;
