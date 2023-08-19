@@ -53,6 +53,9 @@ export async function init(client: Client, folder: string, middleware: Middlewar
 			enumerable: true,
 		});
 
+		if(command.shouldCreateFor === defaultShouldCreateFor)
+			console.warn(`Guild command ${name} uses the default shouldCreateFor. Maybe it should be registered as a regular command?`);
+
 		if ("getOptions" in command && typeof command.getOptions !== "function")
 			throw new LoadError(
 				name,
