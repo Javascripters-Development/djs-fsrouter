@@ -1,9 +1,12 @@
 import type {
+	Snowflake,
 	ChatInputCommandInteraction,
 	ChatInputApplicationCommandData,
 	ApplicationCommandSubCommandData,
 	ApplicationCommandSubGroupData,
+	ApplicationCommandOptionData,
 	AutocompleteInteraction,
+	ApplicationCommand,
 } from "discord.js";
 
 export interface Command extends ChatInputApplicationCommandData {
@@ -11,6 +14,7 @@ export interface Command extends ChatInputApplicationCommandData {
 	autocomplete?: AutocompleteHandler;
 	subfolder: string;
 }
+
 export interface SubcommandGroup extends ApplicationCommandSubGroupData {
 	subcommands: { [name: string]: Subcommand };
 }
@@ -23,15 +27,20 @@ export interface CommandGroup extends Command {
 	subcommandGroups: { [name: string]: SubcommandGroup };
 	subcommands: { [name: string]: Subcommand };
 }
+
 export interface GuildCommand extends Command {
-	shouldCreateFor: (id: string) => boolean;
+	shouldCreateFor: (guildId: string) => boolean;
+	getOptions?: (guildId: string) => ApplicationCommandOptionData[];
+	apiCommands: Map<Snowflake, ApplicationCommand>;
 }
+
 export type ChatInputHandler = (
 	interaction: ChatInputCommandInteraction,
 ) => void;
 export type AutocompleteHandler = (
 	interaction: AutocompleteInteraction,
 ) => void;
+
 export type Middleware = ((inputCommand: Command) => Command)[] | ((inputCommand: Command) => Command);
 export interface InternalConfig {
 	folder: string;

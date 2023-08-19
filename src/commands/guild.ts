@@ -1,40 +1,19 @@
 "use strict";
 
-import type { Guild } from "discord.js";
-import type { Command } from "../types/config.js";
+import type {
+	Snowflake,
+	Client, Guild,
+	ApplicationCommandManager,
+	DiscordAPIError,
+} from "discord.js";
+import type { GuildCommand, Middleware } from "../types/config.js";
 // Guild commands, for those that need different options depending on the server
 
 import checkCommand, { LoadError } from "./check.function.js";
 
-const guildCommands = (exports.commands = {});
+const guildCommands: { [name: string]: GuildCommand } = {};
+export { guildCommands as commands };
 const defaultShouldCreateFor = () => true;
-
-/**
- * Create a command for the given server.
- * @param {object|string} command The command (or command name).
- * @param {Guild} guild The guild it should be created in.
- * @param {boolean} skipCheck If true, the command will be created even if shouldCreateFor returns false.
- * @returns {false|Promise <Map>} false if the command should no
-const { LoadError } = checkCommand;r a list of ApplicationCommand corresponding to this command, mapped by server id.
- */
-exports.createCmd = createCmd;
-
-/**
- * Updates a command for the given server, creating or deleting it if needed. Always obeys shouldCreateFor.
- * @param {object|string} command The command (or command name).
- * @param {Guild} guild The guild it should be updated for.
- * @param {boolean} createIfNotExists If true, the command will be created if it does not exist.
- * @returns {false|Promise} false if the command should not be created, or a Promise that resolves when the command is updated.
- */
-exports.updateCmd = updateCmd;
-
-/**
- * Delete a command for the given server. Ignores shouldCreateFor.
- * @param {object|string} command The command (or command name).
- * @param {Guild} guild The guild it should be updated for.
- * @returns {?Promise<ApplicationCommand>}
- */
-exports.deleteCmd = deleteCmd;
 
 /**
  * Checks if the given command is in a guild.
@@ -42,7 +21,7 @@ exports.deleteCmd = deleteCmd;
  * @param {Guild} guild The guild it should be checked for.
  * @returns {boolean}
  */
-exports.isIn = (command, { id }) => {
+export function isIn(command: string | GuildCommand, { id }: Guild) {
 	if (typeof command === "string") command = guildCommands[command];
 	return command.apiCommands.has(id);
 };
@@ -52,26 +31,26 @@ exports.isIn = (command, { id }) => {
  * @param {Client} client The Discord.js client
  * @param {string} folder The absolute path of folder where the commands are.
  * @param {function} middleware (optional) A function to run on the commands once they are loaded.
- * @returns {Promise <Collection <Snowflake, ApplicationCommand>>}
  */
-exports.init = (client, folder, middleware) => {
-	for (const file of require("fs").readdirSync(folder, {
-		withFileTypes: true,
-	})) {
-		let { name } = file;
-		if (name[0] === "#" || !name.endsWith("js") || !file.isFile()) continue;
+export async function init(client: Client, folder: string, middleware: Middleware = []) {
+	if(typeof middleware === "function") middleware = [middleware];
 
-		const command = require(`${folder}/${name}`);
-		name = name.slice(0, -3);
-		command.apiCommands = new Map();
+	for (const file of require("fs").readdirSync(folder, { withFileTypes: true })) {
+		let { name: fileName } = file;
+		if (fileName[0] === "#" || !fileName.endsWith("js") || !file.isFile()) continue;
 
-		if ("shouldCreateFor" in command) {
-			if (typeof command.shouldCreateFor !== "function")
-				throw new LoadError(
-					name,
-					`Guild command 'shouldCreateFor' must be a function, got ${typeof command.shouldCreateFor}.`,
-				);
-		} else command.shouldCreateFor = defaultShouldCreateFor;
+		const name = fileName.slice(0, -3);
+		const command: GuildCommand = {
+			shouldCreateFor: defaultShouldCreateFor,
+			...await import(`${folder}/${fileName}`),
+			name,
+			apiCommands: new Map(),
+		};
+		Object.defineProperty(command, "name", {
+			writable: false,
+			configurable: false,
+			enumerable: true,
+		});
 
 		if ("getOptions" in command && typeof command.getOptions !== "function")
 			throw new LoadError(
@@ -79,8 +58,7 @@ exports.init = (client, folder, middleware) => {
 				`Guild command 'getOptions' must be a function, got ${typeof command.getOptions}.`,
 			);
 
-		middleware?.(name, command);
-		command.name = name;
+		for (const func of middleware) func(command);
 		if (!command.options) command.options = []; // So we can remove options
 		checkCommand(command);
 		guildCommands[name] = command;
@@ -102,12 +80,12 @@ exports.init = (client, folder, middleware) => {
 			.set(
 				Object.values(guildCommands)
 					.filter((cmd) => cmd.shouldCreateFor(id))
-					.map((cmd) => ({ ...cmd, options: cmd.getOptions(id) })),
+					.map((cmd) => ({ ...cmd, options: cmd.getOptions?.(id) || [] })),
 			)
 			.then((apiCommands) => {
-				for (const apiCmd of apiCommands)
+				for (const apiCmd of apiCommands.values())
 					guildCommands[apiCmd.name]?.apiCommands.set(id, apiCmd);
-			}, error);
+			}, console.error);
 	});
 
 	client.on("guildDelete", ({ id }) => {
@@ -116,75 +94,116 @@ exports.init = (client, folder, middleware) => {
 	});
 };
 
-function getOptions({ getOptions, options }, id) {
+
+function getOptions({ getOptions, options }: GuildCommand, id: Snowflake) {
 	return getOptions?.(id) || options || [];
 }
 
-export async function createCmd(
-	command: Command,
+/**
+ * Create a command for the given server.
+ * @param {GuildCommand|string} command The command (or command name).
+ * @param {Guild} guild The guild it should be created in.
+ * @param {boolean} skipCheck If true, the command will be created even if shouldCreateFor returns false.
+ * @returns {false|Promise <Map>} false if the command should not be created, or a list of ApplicationCommand corresponding to this command, mapped by server id.
+ */
+export function createCmd(
+	command: GuildCommand | string,
 	{ id, commands }: Guild,
 	skipCheck = false,
-): Promise<void> {
+) {
 	if (typeof command === "string") command = guildCommands[command];
 	if (skipCheck || command.shouldCreateFor(id)) {
-		const apiCommand = await commands.create({
+		const { apiCommands } = command;
+		return commands.create({
 			...command,
 			options: getOptions(command, id),
-		});
-		command.apiCommands.set(id, apiCommand);
+		}).then((apiCommand) => apiCommands.set(id, apiCommand));
 	}
+	return false;
 }
 
-function updateCmd(command, { id, commands }, createIfNotExists = true) {
+
+/**
+ * Updates a command for the given server, creating or deleting it if needed. Always obeys shouldCreateFor.
+ * @param {GuildCommand|string} command The command (or command name).
+ * @param {Guild} guild The guild it should be updated for.
+ * @param {boolean} createIfNotExists If true, the command will be created if it does not exist.
+ * @returns {false|Promise} false if the command should not be created, or a Promise that resolves when the command is updated.
+ */
+export function updateCmd(
+	command: GuildCommand | string,
+	guild: Guild,
+	createIfNotExists = true,
+) {
+	const { id, commands } = guild;
 	if (typeof command === "string") command = guildCommands[command];
-	let apiCmd = command.apiCommands.get(id);
+	const { apiCommands, name } = command;
+	let apiCmd = apiCommands.get(id);
 	if (!apiCmd) {
-		apiCmd = commands.cache.find(({ name }) => name === command.name);
-		command.apiCommands.set(id, apiCmd);
+		apiCmd = commands.cache.find(({ name: _name }) => _name === name);
+		if(!apiCmd)
+			throw new Error(
+				`Tried to update command ${name} for guild ${guild}, but the API command couldn't be found.`
+			);
+		apiCommands.set(id, apiCmd);
 	}
 
 	if (!command.shouldCreateFor(id) && apiCmd) {
-		command.apiCommands.delete(id);
-		return apiCmd.delete().catch(error);
+		apiCommands.delete(id);
+		return apiCmd.delete().catch(console.error);
 	} else {
 		const cmdData = { ...command, options: getOptions(command, id) };
 		if (apiCmd)
-			return apiCmd.edit(cmdData).catch((err) => {
-				if (err.status === 404)
-					return createCmd(command, { id, commands }, true);
-				throw err;
+			return apiCmd.edit(cmdData).catch((err: DiscordAPIError) => {
+				if (err.status !== 404) console.error(err);
+				else {
+					const newCommand = createCmd(command, guild, true);
+					if(newCommand) return newCommand;
+				}
 			});
 		else if (createIfNotExists)
 			return commands
 				.create(cmdData)
-				.then((apiCmd) => command.apiCommands.set(id, apiCmd), createFailed);
+				.then((apiCmd) => apiCommands.set(id, apiCmd), createFailed);
 		else
 			throw new Error(
-				`Tried to update command ${command.name} for guild ${guild}, but the API command couldn't be found.`,
+				`Tried to update command ${name} for guild ${guild}, but the API command couldn't be found.`,
 			);
 	}
 }
 
-function deleteCmd(command, { id, commands }) {
+
+/**
+ * Delete a command for the given server. Ignores shouldCreateFor.
+ * @param {GuildCommand|string} command The command (or command name).
+ * @param {Guild} guild The guild it should be updated for.
+ * @returns {?Promise<ApplicationCommand>}
+ */
+export function deleteCmd(
+	command: GuildCommand | string,
+	{ id, commands }: Guild,
+) {
 	if (typeof command === "string") command = guildCommands[command];
+	const { name: cmdName } = command;
 	const apiCmd =
 		command.apiCommands.get(id) ||
-		commands.cache.find(({ name }) => name === command.name);
+		commands.cache.find(({ name }) => name === cmdName);
 	command.apiCommands.delete(id);
-	return apiCmd?.delete().catch(error);
+	return apiCmd?.delete().catch(console.error);
 }
+
+
 
 const failed = new Set();
 
-function createFailed(err) {
-	if (!err.message.includes("daily application command creates")) throw err;
+function createFailed(error: DiscordAPIError) {
+	if (!error.message.includes("daily application command creates")) throw error;
 
-	const guildId = err.url.match(/guilds\/([0-9]+)\/commands/)?.[1];
-	if (!guildId) throw err;
+	const guildId = error.url.match(/guilds\/([0-9]+)\/commands/)?.[1];
+	if (!guildId) throw error;
 	if (failed.has(guildId)) return;
 
 	failed.add(guildId);
 	setTimeout(failed.delete.bind(failed, guildId), 86400_000); // 24h
-	error.guildId = guildId;
-	throw err;
+	throw { guildId, error };
 }
