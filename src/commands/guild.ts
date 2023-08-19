@@ -43,7 +43,7 @@ export async function init(client: Client, folder: string, middleware: Middlewar
 		const name = fileName.slice(0, -3);
 		const command: GuildCommand = {
 			shouldCreateFor: defaultShouldCreateFor,
-			...await import(toFileURL(`${folder}/${fileName}`)),
+			...(await import(toFileURL(`${folder}/${fileName}`))).default,
 			name,
 			apiCommands: new Map(),
 		};

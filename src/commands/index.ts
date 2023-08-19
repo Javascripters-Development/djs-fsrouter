@@ -193,7 +193,7 @@ async function createSubCommandGroup(parent: string, groupName: string) {
 	const subcommands: { [name: string]: Subcommand } = {};
 	const group: SubcommandGroup = {
 		...(existsSync(`${path}/$info.js`)
-			? (await import(toFileURL(`${path}/$info.js`))).default
+			? await import(toFileURL(`${path}/$info.js`))
 			: { description: `/${parent} ${groupName}` }),
 		name: groupName,
 		type: SubcommandGroup,
