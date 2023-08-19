@@ -1,6 +1,14 @@
 "use strict";
 
 import type { Client, GuildApplicationCommandManager } from "discord.js";
+import { ChannelType } from "discord.js";
+export const ALL_TEXT_CHANNEL_TYPES = [
+	ChannelType.GuildText,
+	ChannelType.PublicThread,
+	ChannelType.PrivateThread,
+	ChannelType.GuildAnnouncement,
+	ChannelType.AnnouncementThread,
+];
 import type { Config } from "./types/config.js";
 import type { InitOptions } from "./commands/index.js";
 import { statSync } from "node:fs";
