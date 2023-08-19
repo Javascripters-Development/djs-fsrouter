@@ -145,11 +145,7 @@ export function updateCmd(
 	let apiCmd = apiCommands.get(id);
 	if (!apiCmd) {
 		apiCmd = commands.cache.find(({ name: _name }) => _name === name);
-		if(!apiCmd)
-			throw new Error(
-				`Tried to update command ${name} for guild ${guild}, but the API command couldn't be found.`
-			);
-		apiCommands.set(id, apiCmd);
+		if (apiCmd) apiCommands.set(id, apiCmd);
 	}
 
 	if (!command.shouldCreateFor(id) && apiCmd) {
