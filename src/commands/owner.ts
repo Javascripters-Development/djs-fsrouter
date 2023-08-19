@@ -73,6 +73,7 @@ export async function load(
  * Reloads all owner commands, using the same arguments as the first one.
  * @returns {object} The owner command object, ready te be re-registered.
  */
+/*
 export function reload() {
 	const { name } = command;
 	if (!name)
@@ -83,3 +84,4 @@ export function reload() {
 	const { description, defaultMemberPermissions } = command;
 	return load(_parentFolder, { name, description, defaultMemberPermissions });
 };
+*/
