@@ -86,10 +86,13 @@ async function loadFolder(path: string) {
 	}
 }
 
-export async function load(name: string, subfolder = "", reloadIfExists = false) {
-	if (name.endsWith(".js") || name.endsWith(".ts")) name = name.slice(0, -3);
 
-	const file = `${root}/${subfolder}${subfolder ? "/" : ""}${name}.js`;
+const readonly = { writable: false, configurable: false, enumerable: true };
+
+export async function load(name: string, subfolder = "", reloadIfExists = false) {
+	if (name.endsWith(".js")) name = name.slice(0, -3);
+
+	const file = `${root}/${subfolder}/${name}.js`;
 
 	if (commands[name]) {
 		if (commands[name].subfolder !== subfolder)
@@ -105,9 +108,13 @@ export async function load(name: string, subfolder = "", reloadIfExists = false)
 		options: [],
 		dmPermission: defaultDmPermission,
 		...(await import(file)).default,
-		subfolder,
 		name,
+		subfolder,
 	};
+	Object.defineProperties(command, {
+		name: readonly,
+		subfolder: readonly,
+	});
 	for(const func of middleware) command = func(command);
 	checkCommand(command);
 	return (commands[name] = command);
