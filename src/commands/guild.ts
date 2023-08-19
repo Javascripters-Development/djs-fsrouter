@@ -189,7 +189,7 @@ export function deleteCmd(
 		command.apiCommands.get(id) ||
 		commands.cache.find(({ name }) => name === cmdName);
 	command.apiCommands.delete(id);
-	return apiCmd?.delete().catch(console.error);
+	return apiCmd?.delete().catch(console.error) || Promise;
 }
 
 
