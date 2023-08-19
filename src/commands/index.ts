@@ -65,8 +65,7 @@ export function init(
 	const { commands: commandManager } = allAsGuild || client.application || {};
 	if(commandManager) {
 		defaultManager = commandManager;
-		loadFolder(folder);
-		return commandManager.set(Object.values(commands));
+		return loadFolder(folder).then(() => commandManager.set(Object.values(commands)));
 	} else {
 		return Promise.reject("Couldn't get a command manager.");
 	}
