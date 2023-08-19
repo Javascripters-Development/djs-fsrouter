@@ -1,11 +1,20 @@
 "use strict";
 
-const { SUBCOMMAND, SUBCOMMAND_GROUP } = require("../enums");
-const checkCommand = require("./check.function");
+import { ApplicationCommandOptionType, PermissionResolvable } from "discord.js";
+const { Subcommand, SubcommandGroup } = ApplicationCommandOptionType;
+import checkCommand, { NAME_REGEX, LoadError } from "./check.function.js";
+import type { Command, ChatInputHandler } from "../types/config.js";
+import { readdirSync } from "node:fs";
 
-exports.command = {};
-const ownerCmds = (exports.commands = {});
-let _parentFolder;
+export const command: Partial<Command> = {};
+export const commands: { [name: string]: Command } = {};
+let _parentFolder: string;
+
+type OwnerConfig = {
+	name: string,
+	description: string,
+	defaultMemberPermissions: PermissionResolvable | null,
+};
 
 /**
  * Loads owner comands.
@@ -13,49 +22,49 @@ let _parentFolder;
  * @param {string} data Data about the command
  * @param {string} data.name The command name. Must be a subfolder under parentFolder. Default: "owner"
  * @param {string} data.description The command description. Default: "Execute an owner command"
- * @param {number|"0"} data.defaultMemberPermissions Default permissions required to execute the command. Default: "0"
+ * @param {bigint|"0"} data.defaultMemberPermissions Default permissions required to execute the command. Default: "0"
  * @returns {object} the command object, ready to be registered.
  */
-exports.load = (
-	parentFolder,
+export async function load(
+	parentFolder: string,
 	{
 		name,
 		description = "Execute an owner command",
 		defaultMemberPermissions = "0",
-	},
-) => {
+	}: Partial<OwnerConfig> = {},
+): Promise<Command | false> {
 	if (!name) name = "owner";
-	else if (!checkCommand.NAME_REGEX.test(name))
+	else if (!NAME_REGEX.test(name))
 		throw new Error(
 			`Owner subfolder must have a valid command name; got '${name}'`,
 		);
 
 	const folder = `${parentFolder}/${name}`;
-	const ownerCmdFiles = require("fs")
-		.readdirSync(folder)
-		.filter((f) => f.endsWith(".js") && f[0] !== "#");
+	const ownerCmdFiles = readdirSync(folder).filter((f) => f.endsWith(".js") && f[0] !== "#");
 	if (!ownerCmdFiles) return false;
 
 	for (const cmd of ownerCmdFiles.map((f) => f.slice(0, -3))) {
-		const command = require(`${folder}/${cmd}`);
-		if (!("type" in command)) command.type = SUBCOMMAND;
-		else if (command.type !== SUBCOMMAND && command.type !== SUBCOMMAND_GROUP)
+		const {command} = await import(`${folder}/${cmd}`);
+		if (!("type" in command)) command.type = Subcommand;
+		else if (command.type !== Subcommand && command.type !== SubcommandGroup)
 			throw new LoadError(
 				cmd,
-				`Owner commands can only have the SUBCOMMAND or SUBCOMMAND_GROUP type.`,
+				`Owner commands can only have the Subcommand or SubcommandGroup type.`,
 			);
 		command.name = cmd;
 		checkCommand(command);
-		ownerCmds[cmd] = command;
+		commands[cmd] = command;
 	}
 
+	const run: ChatInputHandler = (inter) => commands[inter.options.getSubcommand()].run(inter);
 	_parentFolder = parentFolder;
-	return Object.assign(exports.command, {
+	return Object.assign(command, {
 		name,
+		subfolder: name,
 		description,
 		defaultMemberPermissions,
-		options: Object.values(ownerCmds),
-		run: (inter) => ownerCmds[inter.options.getSubcommand()].run(inter),
+		options: Object.values(commands),
+		run,
 	});
 };
 
@@ -63,24 +72,13 @@ exports.load = (
  * Reloads all owner commands, using the same arguments as the first one.
  * @returns {object} The owner command object, ready te be re-registered.
  */
-exports.reload = () => {
-	const {
-		load,
-		command,
-		command: { name },
-	} = exports;
+export function reload() {
+	const { name } = command;
 	if (!name)
 		throw new Error(
 			"Cannot reload owner commands unless they have already been loaded.",
 		);
 
-	const folder = `${_parentFolder}/${name}`;
-	const files = require("fs").readdirSync(folder);
-	for (const cmd in ownerCmds) {
-		if (files.includes(cmd + ".js"))
-			delete require.cache[require.resolve(`${folder}/${cmd}`)];
-		else delete ownerCmds[cmd];
-	}
-
-	return load(_parentFolder, command);
+	const { description, defaultMemberPermissions } = command;
+	return load(_parentFolder, { name, description, defaultMemberPermissions });
 };
