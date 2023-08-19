@@ -27,7 +27,7 @@ export function toFileURL(path: string) {
 
 export const specialFolders: Array<string> = [];
 export const commands: { [name: string]: Command; } = {};
-Object.defineProperty(commands, "$reload", { value: reload });
+//Object.defineProperty(commands, "$reload", { value: reload });
 
 export type InitOptions = {
 	debug: boolean,
@@ -93,7 +93,7 @@ async function loadFolder(path: string) {
 
 const readonly = { writable: false, configurable: false, enumerable: true };
 
-export async function load(name: string, subfolder = "", reloadIfExists = false) {
+export async function load(name: string, subfolder = ""/*, reloadIfExists = false*/) {
 	if (name.endsWith(".js")) name = name.slice(0, -3);
 
 	if (commands[name]) {
@@ -103,7 +103,7 @@ export async function load(name: string, subfolder = "", reloadIfExists = false)
 				`Can't load command ${name} of subfolder "${subfolder}", it already exists in subfolder "${commands[name].subfolder}"`,
 			);
 
-		if (!reloadIfExists) return commands[name];
+		//if (!reloadIfExists) return commands[name];
 	}
 
 	const file = toFileURL(`${root}/${subfolder}/${name}.js`);
@@ -122,7 +122,7 @@ export async function load(name: string, subfolder = "", reloadIfExists = false)
 	checkCommand(command);
 	return (commands[name] = command);
 }
-
+/*
 export async function reload(cmdName: string, subfolder = "", cmdManager = defaultManager) {
 	const cmd = foldersAreGroups && !existsSync(`${root}/${subfolder}/${cmdName}.js`)
 		? await createCommandGroup(cmdName)
@@ -131,7 +131,7 @@ export async function reload(cmdName: string, subfolder = "", cmdManager = defau
 		cmdManager.cache.find(({ name }) => name === cmdName)?.edit(cmd) ||
 		cmdManager.create(cmd)
 	);
-}
+}*/
 
 async function createCommandGroup(cmdName: string) {
 	const path = `${root}/${cmdName}`;

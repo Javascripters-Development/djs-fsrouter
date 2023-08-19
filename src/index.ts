@@ -17,7 +17,7 @@ import { load as loadOwnerCommands, reload as reloadOwnerCommands, command as ow
 import interactionHandler from "./interactionCreate.js";
 import { fileURLToPath } from "node:url";
 
-export { commands, reload } from "./commands/index.js";
+export { commands/*, reload*/ } from "./commands/index.js";
 export * as guildCommands from "./commands/guild.js";
 export async function reloadOwner() {
 	const { name } = ownerCommand;
