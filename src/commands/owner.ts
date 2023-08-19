@@ -45,7 +45,7 @@ export async function load(
 	if (!ownerCmdFiles) return false;
 
 	for (const cmd of ownerCmdFiles.map((f) => f.slice(0, -3))) {
-		const {default: command} = await import(toFileURL(`${folder}/${cmd}`));
+		const command = await import(toFileURL(`${folder}/${cmd}`));
 		if (!("type" in command)) command.type = Subcommand;
 		else if (command.type !== Subcommand && command.type !== SubcommandGroup)
 			throw new LoadError(

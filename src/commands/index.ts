@@ -110,7 +110,7 @@ export async function load(name: string, subfolder = ""/*, reloadIfExists = fals
 	let command: Command = {
 		options: [],
 		dmPermission: defaultDmPermission,
-		...(await import(file)).default,
+		...await import(file),
 		name,
 		subfolder,
 	};
@@ -160,7 +160,7 @@ async function createCommandGroup(cmdName: string) {
 		}
 		else if (name.endsWith(".js")) {
 			const subCmd: Subcommand = {
-				...(await import(toFileURL(`${path}/${name}`))).default,
+				...await import(toFileURL(`${path}/${name}`)),
 				name: name.slice(0, -3),
 				type: Subcommand,
 			};
@@ -227,7 +227,7 @@ async function createSubCommandGroup(parent: string, groupName: string) {
 }
 
 async function createSubCommand(directory: string, name: string): Promise<Subcommand> {
-	const subcommandData: Omit<Subcommand, "autocompleteHandler"> = (await import(toFileURL(`${directory}/${name}`))).default;
+	const subcommandData: Omit<Subcommand, "autocompleteHandler"> = await import(toFileURL(`${directory}/${name}`));
 	const { autocomplete } = subcommandData;
 	name = name.slice(0, -3);
 	if(!autocomplete)
