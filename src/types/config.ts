@@ -42,14 +42,13 @@ export type AutocompleteHandler = (
 ) => void;
 
 export type Middleware = ((inputCommand: Command) => Command)[] | ((inputCommand: Command) => Command);
-export interface InternalConfig {
+export interface Config {
 	folder: string;
-	ownerCommand: string;
-	ownerServer: string;
-	singleServer: boolean;
-	autoSubCommands: boolean;
-	debug: boolean;
-	defaultDmPermission: boolean;
-	middleware: Middleware;
+	ownerCommand?: string;
+	ownerServer?: string;
+	singleServer?: boolean;
+	autoSubCommands?: boolean;
+	debug?: boolean;
+	defaultDmPermission?: boolean;
+	middleware?: Middleware;
 }
-export type Config = Partial<InternalConfig>;
