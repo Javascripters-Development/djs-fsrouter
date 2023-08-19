@@ -137,7 +137,7 @@ async function createCommandGroup(cmdName: string) {
 	const subcommandGroups: { [name: string]: SubcommandGroup } = {};
 	const cmd: CommandGroup = {
 		...(existsSync(`${path}/#info.js`)
-			? (await import(`${path}/#info.js`)).default
+			? await import(`${path}/#info.js`)
 			: { description: `/${cmdName}` }),
 		name: cmdName,
 		options,
