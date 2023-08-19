@@ -1,11 +1,10 @@
 import { commands } from "./commands/index.js";
 import {
-	type AutocompleteInteraction,
-	type CommandInteraction,
+	type Interaction,
 	InteractionType,
 } from "discord.js";
 export default async (
-	interaction: CommandInteraction | AutocompleteInteraction,
+	interaction: Interaction,
 ) => {
 	if (
 		interaction.type !== InteractionType.ApplicationCommand &&
@@ -16,12 +15,14 @@ export default async (
 	const command = commands[interaction.commandName];
 	if (!command)
 		console.error(`Received unknown command: ${interaction.commandName}`);
-	else if (interaction.type === InteractionType.ApplicationCommand)
+	else if (interaction.isChatInputCommand())
 		command.run(interaction);
-	else if (typeof command.autocomplete === "function")
-		command.autocomplete(interaction);
-	else
-		console.error(
-			`Received autocomplete interaction for a command without autocomplete (${command.name})`,
-		);
+	else if(interaction.isAutocomplete()) {
+		if (typeof command.autocomplete === "function")
+			command.autocomplete(interaction);
+		else
+			console.error(
+				`Received autocomplete interaction for a command without autocomplete (${command.name})`,
+			);
+	}
 };

@@ -6,6 +6,7 @@ import type { InitOptions } from "./commands/index.js";
 import { statSync } from "node:fs";
 import { commands, init as initCommands, specialFolders } from "./commands/index.js";
 import { load as loadOwnerCommands, reload as reloadOwnerCommands, command as ownerCommand } from "./commands/owner.js";
+import interactionHandler from "./interactionCreate.js";
 
 export { commands, reload } from "./commands/index.js";
 export * as guildCommands from "./commands/guild.js";
@@ -82,7 +83,7 @@ export default async function loadCommands(
 		});
 
 	load.then(() =>
-		client.on("interactionCreate", require("./interactionCreate.ts")),
+		client.on("interactionCreate", interactionHandler),
 	);
 
 	return load;
