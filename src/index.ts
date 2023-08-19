@@ -91,7 +91,7 @@ export default async function loadCommands(
 				init: initGuildCmds,
 				commands: guildCommands,
 			} = await import("./commands/guild.js");
-			initGuildCmds(client, folder + "/$guild", middleware);
+			await initGuildCmds(client, folder + "/$guild", middleware);
 			Object.assign(commands, guildCommands);
 		});
 
