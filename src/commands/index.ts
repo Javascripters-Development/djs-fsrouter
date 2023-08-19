@@ -228,7 +228,7 @@ async function createSubCommandGroup(parent: string, groupName: string) {
 }
 
 async function createSubCommand(directory: string, name: string): Promise<Subcommand> {
-	const subcommandData: Omit<Subcommand, "autocompleteHandler"> = await import(toFileURL(`${directory}/${name}`))
+	const subcommandData: Omit<Subcommand, "autocompleteHandler"> = (await import(toFileURL(`${directory}/${name}`))).default;
 	const { autocomplete } = subcommandData;
 	name = name.slice(0, -3);
 	if(!autocomplete)
