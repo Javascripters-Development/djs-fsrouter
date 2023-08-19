@@ -12,12 +12,19 @@ export const ALL_TEXT_CHANNEL_TYPES = [
 import type { Config } from "./types/config.js";
 import type { InitOptions } from "./commands/index.js";
 import { statSync } from "node:fs";
-import { commands, init as initCommands, specialFolders } from "./commands/index.js";
-import { load as loadOwnerCommands, /*reload as reloadOwnerCommands,*/ command as ownerCommand } from "./commands/owner.js";
+import {
+	commands,
+	init as initCommands,
+	specialFolders,
+} from "./commands/index.js";
+import {
+	load as loadOwnerCommands,
+	/*reload as reloadOwnerCommands,*/ command as ownerCommand,
+} from "./commands/owner.js";
 import interactionHandler from "./interactionCreate.js";
 import { fileURLToPath } from "node:url";
 
-export { commands/*, reload*/ } from "./commands/index.js";
+export { commands /*, reload*/ } from "./commands/index.js";
 export * as guildCommands from "./commands/guild.js";
 /*
 export async function reloadOwner() {
@@ -30,7 +37,7 @@ export async function reloadOwner() {
 };*/
 
 export function getPath(metaURL: string, relative: string) {
-	return fileURLToPath(new URL(relative, metaURL));;
+	return fileURLToPath(new URL(relative, metaURL));
 }
 
 let ownerManager: GuildApplicationCommandManager;
@@ -48,20 +55,22 @@ export default async function loadCommands(
 		middleware = [],
 	}: Config,
 ) {
-	if(!folder)
-		throw new TypeError("You must provide the commands folder.");
+	if (!folder) throw new TypeError("You must provide the commands folder.");
 
 	if (!statSync(folder).isDirectory())
 		throw new TypeError("'folder' must be a path to a folder");
 
-	if (middleware && typeof middleware === "function")
-		middleware = [middleware];
+	if (middleware && typeof middleware === "function") middleware = [middleware];
 
 	if (!folder.startsWith("/") && !folder.match(/^[A-Z]:/))
-		throw new Error("Relative paths are not supported. Please provide the absolute path to your commands folder.");
+		throw new Error(
+			"Relative paths are not supported. Please provide the absolute path to your commands folder.",
+		);
 
 	if (singleServer && !ownerServerId)
-		throw new Error("Need to specify the ownerServer is singleServer is set to true.");
+		throw new Error(
+			"Need to specify the ownerServer is singleServer is set to true.",
+		);
 
 	const initOptions: InitOptions = {
 		debug,
@@ -74,10 +83,10 @@ export default async function loadCommands(
 			specialFolders.push(ownerCommand);
 			const ownerServer = await client.guilds.fetch(ownerServerId);
 			ownerManager = ownerServer.commands;
-			if(singleServer) initOptions.allAsGuild = ownerServer;
+			if (singleServer) initOptions.allAsGuild = ownerServer;
 
 			const ownerCmd = await loadOwnerCommands(folder, { name: ownerCommand });
-			if(ownerCmd) {
+			if (ownerCmd) {
 				if (singleServer) commands[ownerCommand] = ownerCmd;
 				else ownerManager.set([ownerCmd]);
 			}
@@ -88,17 +97,14 @@ export default async function loadCommands(
 
 	if (statSync(folder + "/$guild", { throwIfNoEntry: false })?.isDirectory())
 		load.then(async () => {
-			const {
-				init: initGuildCmds,
-				commands: guildCommands,
-			} = await import("./commands/guild.js");
+			const { init: initGuildCmds, commands: guildCommands } = await import(
+				"./commands/guild.js"
+			);
 			await initGuildCmds(client, folder + "/$guild", middleware);
 			Object.assign(commands, guildCommands);
 		});
 
-	load.then(() =>
-		client.on("interactionCreate", interactionHandler),
-	);
+	load.then(() => client.on("interactionCreate", interactionHandler));
 
 	return load;
 

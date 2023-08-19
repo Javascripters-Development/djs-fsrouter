@@ -73,14 +73,11 @@ function checkOptions(
 	if (!options.length) return;
 
 	const firstIsSubcmd =
-		options[0].type === Subcommand
-		|| options[0].type === SubcommandGroup;
+		options[0].type === Subcommand || options[0].type === SubcommandGroup;
 
 	for (const option of options) {
 		const { type, name, description } = option;
-		const isSubCmd =
-			type === Subcommand
-			|| type === SubcommandGroup;
+		const isSubCmd = type === Subcommand || type === SubcommandGroup;
 		if (firstIsSubcmd !== isSubCmd)
 			throw new LoadError(
 				cmdName,
@@ -122,8 +119,7 @@ function checkOptions(
 					`Subcommand group options can only be subcommands.`,
 				);
 			subCommands.forEach(checkCommand);
-		} else if (type === Subcommand)
-			checkCommand(option);
+		} else if (type === Subcommand) checkCommand(option);
 		else if (option.autocomplete) {
 			if (!autocompleteHandler)
 				throw new LoadError(

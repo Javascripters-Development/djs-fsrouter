@@ -12,9 +12,9 @@ export const commands: { [name: string]: Command } = {};
 let _parentFolder: string;
 
 type OwnerConfig = {
-	name: string,
-	description: string,
-	defaultMemberPermissions: PermissionResolvable | null,
+	name: string;
+	description: string;
+	defaultMemberPermissions: PermissionResolvable | null;
 };
 
 /**
@@ -41,7 +41,9 @@ export async function load(
 		);
 
 	const folder = `${parentFolder}/${name}`;
-	const ownerCmdFiles = readdirSync(folder).filter((f) => f.endsWith(".js") && f[0] !== "$");
+	const ownerCmdFiles = readdirSync(folder).filter(
+		(f) => f.endsWith(".js") && f[0] !== "$",
+	);
 	if (!ownerCmdFiles) return false;
 
 	for (const cmd of ownerCmdFiles.map((f) => f.slice(0, -3))) {
@@ -57,7 +59,8 @@ export async function load(
 		commands[cmd] = command;
 	}
 
-	const run: ChatInputHandler = (inter) => commands[inter.options.getSubcommand()].run(inter);
+	const run: ChatInputHandler = (inter) =>
+		commands[inter.options.getSubcommand()].run(inter);
 	_parentFolder = parentFolder;
 	return Object.assign(command, {
 		name,
@@ -67,7 +70,7 @@ export async function load(
 		options: Object.values(commands),
 		run,
 	});
-};
+}
 
 /**
  * Reloads all owner commands, using the same arguments as the first one.

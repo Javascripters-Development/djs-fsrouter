@@ -2,7 +2,8 @@
 
 import type {
 	Snowflake,
-	Client, Guild,
+	Client,
+	Guild,
 	ApplicationCommandManager,
 } from "discord.js";
 import { DiscordAPIError } from "discord.js";
@@ -25,7 +26,7 @@ const defaultShouldCreateFor = () => true;
 export function isIn(command: string | GuildCommand, { id }: Guild) {
 	if (typeof command === "string") command = guildCommands[command];
 	return command.apiCommands.has(id);
-};
+}
 
 /**
  * Loads guild commands.
@@ -33,17 +34,22 @@ export function isIn(command: string | GuildCommand, { id }: Guild) {
  * @param {string} folder The absolute path of folder where the commands are.
  * @param {function} middleware (optional) A function to run on the commands once they are loaded.
  */
-export async function init(client: Client, folder: string, middleware: Middleware = []) {
-	if(typeof middleware === "function") middleware = [middleware];
+export async function init(
+	client: Client,
+	folder: string,
+	middleware: Middleware = [],
+) {
+	if (typeof middleware === "function") middleware = [middleware];
 
 	for (const file of readdirSync(folder, { withFileTypes: true })) {
 		let { name: fileName } = file;
-		if (fileName[0] === "$" || !fileName.endsWith("js") || !file.isFile()) continue;
+		if (fileName[0] === "$" || !fileName.endsWith("js") || !file.isFile())
+			continue;
 
 		const name = fileName.slice(0, -3);
 		const command: GuildCommand = {
 			shouldCreateFor: defaultShouldCreateFor,
-			...await import(toFileURL(`${folder}/${fileName}`)),
+			...(await import(toFileURL(`${folder}/${fileName}`))),
 			name,
 			apiCommands: new Map(),
 		};
@@ -53,8 +59,10 @@ export async function init(client: Client, folder: string, middleware: Middlewar
 			enumerable: true,
 		});
 
-		if(command.shouldCreateFor === defaultShouldCreateFor)
-			console.warn(`Guild command ${name} uses the default shouldCreateFor. Maybe it should be registered as a regular command?`);
+		if (command.shouldCreateFor === defaultShouldCreateFor)
+			console.warn(
+				`Guild command ${name} uses the default shouldCreateFor. Maybe it should be registered as a regular command?`,
+			);
 
 		if ("getOptions" in command && typeof command.getOptions !== "function")
 			throw new LoadError(
@@ -96,8 +104,7 @@ export async function init(client: Client, folder: string, middleware: Middlewar
 		for (const { apiCommands } of Object.values(guildCommands))
 			apiCommands.delete(id);
 	});
-};
-
+}
 
 function getOptions({ getOptions, options }: GuildCommand, id: Snowflake) {
 	return getOptions?.(id) || options || [];
@@ -118,14 +125,15 @@ export function createCmd(
 	if (typeof command === "string") command = guildCommands[command];
 	if (skipCheck || command.shouldCreateFor(id)) {
 		const { apiCommands } = command;
-		return commands.create({
-			...command,
-			options: getOptions(command, id),
-		}).then((apiCommand) => apiCommands.set(id, apiCommand));
+		return commands
+			.create({
+				...command,
+				options: getOptions(command, id),
+			})
+			.then((apiCommand) => apiCommands.set(id, apiCommand));
 	}
 	return false;
 }
-
 
 /**
  * Updates a command for the given server, creating or deleting it if needed. Always obeys shouldCreateFor.
@@ -155,10 +163,10 @@ export function updateCmd(
 		const cmdData = { ...command, options: getOptions(command, id) };
 		if (apiCmd)
 			return apiCmd.edit(cmdData).catch((err: Error) => {
-				if(!(err instanceof DiscordAPIError) || err.status !== 404) throw err;
+				if (!(err instanceof DiscordAPIError) || err.status !== 404) throw err;
 				else {
 					const newCommand = createCmd(command, guild, true);
-					if(newCommand) return newCommand;
+					if (newCommand) return newCommand;
 				}
 			});
 		else if (createIfNotExists)
@@ -171,7 +179,6 @@ export function updateCmd(
 			);
 	}
 }
-
 
 /**
  * Delete a command for the given server. Ignores shouldCreateFor.
@@ -191,8 +198,6 @@ export function deleteCmd(
 	command.apiCommands.delete(id);
 	return apiCmd?.delete().catch(console.error) || Promise.resolve(false);
 }
-
-
 
 const failed = new Set();
 

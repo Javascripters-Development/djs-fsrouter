@@ -1,11 +1,6 @@
 import { commands } from "./commands/index.js";
-import {
-	type Interaction,
-	InteractionType,
-} from "discord.js";
-export default async (
-	interaction: Interaction,
-) => {
+import { type Interaction, InteractionType } from "discord.js";
+export default async (interaction: Interaction) => {
 	if (
 		interaction.type !== InteractionType.ApplicationCommand &&
 		interaction.type !== InteractionType.ApplicationCommandAutocomplete
@@ -15,9 +10,8 @@ export default async (
 	const command = commands[interaction.commandName];
 	if (!command)
 		console.error(`Received unknown command: ${interaction.commandName}`);
-	else if (interaction.isChatInputCommand())
-		command.run(interaction);
-	else if(interaction.isAutocomplete()) {
+	else if (interaction.isChatInputCommand()) command.run(interaction);
+	else if (interaction.isAutocomplete()) {
 		if (typeof command.autocomplete === "function")
 			command.autocomplete(interaction);
 		else

@@ -18,7 +18,8 @@ export interface Command extends ChatInputApplicationCommandData {
 export interface SubcommandGroup extends ApplicationCommandSubGroupData {
 	subcommands: { [name: string]: Subcommand };
 }
-export interface Subcommand extends Omit<ApplicationCommandSubCommandData, "autocomplete"> {
+export interface Subcommand
+	extends Omit<ApplicationCommandSubCommandData, "autocomplete"> {
 	run: ChatInputHandler;
 	autocomplete?: boolean | AutocompleteHandler;
 	autocompleteHandler?: AutocompleteHandler;
@@ -41,7 +42,9 @@ export type AutocompleteHandler = (
 	interaction: AutocompleteInteraction,
 ) => void;
 
-export type Middleware = ((inputCommand: Command) => Command)[] | ((inputCommand: Command) => Command);
+export type Middleware =
+	| ((inputCommand: Command) => Command)[]
+	| ((inputCommand: Command) => Command);
 export interface Config {
 	folder: string;
 	ownerCommand?: string;

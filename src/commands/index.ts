@@ -1,14 +1,22 @@
 "use strict";
 
 import {
-	Client, ApplicationCommandManager,
-	Guild, GuildApplicationCommandManager,
+	Client,
+	ApplicationCommandManager,
+	Guild,
+	GuildApplicationCommandManager,
 	ApplicationCommandOptionType,
 	ApplicationCommandOptionData,
-	ChatInputCommandInteraction, AutocompleteInteraction,
+	ChatInputCommandInteraction,
+	AutocompleteInteraction,
 } from "discord.js";
 const { Subcommand, SubcommandGroup } = ApplicationCommandOptionType;
-import type { Command, CommandGroup, Subcommand, SubcommandGroup } from "../types/config.js";
+import type {
+	Command,
+	CommandGroup,
+	Subcommand,
+	SubcommandGroup,
+} from "../types/config.js";
 
 import { readdirSync, existsSync } from "node:fs";
 var skipDebug = true;
@@ -26,15 +34,15 @@ export function toFileURL(path: string) {
 }
 
 export const specialFolders: Array<string> = [];
-export const commands: { [name: string]: Command; } = {};
+export const commands: { [name: string]: Command } = {};
 //Object.defineProperty(commands, "$reload", { value: reload });
 
 export type InitOptions = {
-	debug: boolean,
-	autoSubCommands: boolean,
-	defaultDmPermission: boolean,
-	allAsGuild?: Guild,
-	middleware: typeof middleware,
+	debug: boolean;
+	autoSubCommands: boolean;
+	defaultDmPermission: boolean;
+	allAsGuild?: Guild;
+	middleware: typeof middleware;
 };
 
 /**
@@ -63,13 +71,15 @@ export function init(
 	middleware = _middleware;
 	foldersAreGroups = autoSubCommands;
 	const { commands: commandManager } = allAsGuild || client.application || {};
-	if(commandManager) {
+	if (commandManager) {
 		defaultManager = commandManager;
-		return loadFolder(folder).then(() => commandManager.set(Object.values(commands)));
+		return loadFolder(folder).then(() =>
+			commandManager.set(Object.values(commands)),
+		);
 	} else {
 		return Promise.reject("Couldn't get a command manager.");
 	}
-};
+}
 
 async function loadFolder(path: string) {
 	const subfolder = path.substring(root.length + 1);
@@ -90,10 +100,12 @@ async function loadFolder(path: string) {
 	}
 }
 
-
 const readonly = { writable: false, configurable: false, enumerable: true };
 
-export async function load(name: string, subfolder = ""/*, reloadIfExists = false*/) {
+export async function load(
+	name: string,
+	subfolder = "" /*, reloadIfExists = false*/,
+) {
 	if (name.endsWith(".js")) name = name.slice(0, -3);
 
 	if (commands[name]) {
@@ -110,7 +122,7 @@ export async function load(name: string, subfolder = ""/*, reloadIfExists = fals
 	let command: Command = {
 		options: [],
 		dmPermission: defaultDmPermission,
-		...await import(file),
+		...(await import(file)),
 		name,
 		subfolder,
 	};
@@ -118,7 +130,7 @@ export async function load(name: string, subfolder = ""/*, reloadIfExists = fals
 		name: readonly,
 		subfolder: readonly,
 	});
-	for(const func of middleware) command = func(command);
+	for (const func of middleware) command = func(command);
 	checkCommand(command);
 	return (commands[name] = command);
 }
@@ -157,10 +169,9 @@ async function createCommandGroup(cmdName: string) {
 			const group = await createSubCommandGroup(cmdName, name);
 			options.push(group);
 			subcommandGroups[name] = group;
-		}
-		else if (name.endsWith(".js")) {
+		} else if (name.endsWith(".js")) {
 			const subCmd: Subcommand = {
-				...await import(toFileURL(`${path}/${name}`)),
+				...(await import(toFileURL(`${path}/${name}`))),
 				name: name.slice(0, -3),
 				type: Subcommand,
 			};
@@ -226,22 +237,24 @@ async function createSubCommandGroup(parent: string, groupName: string) {
 	return group;
 }
 
-async function createSubCommand(directory: string, name: string): Promise<Subcommand> {
-	const subcommandData: Omit<Subcommand, "autocompleteHandler"> = await import(toFileURL(`${directory}/${name}`));
+async function createSubCommand(
+	directory: string,
+	name: string,
+): Promise<Subcommand> {
+	const subcommandData: Omit<Subcommand, "autocompleteHandler"> = await import(
+		toFileURL(`${directory}/${name}`)
+	);
 	const { autocomplete } = subcommandData;
 	name = name.slice(0, -3);
-	if(!autocomplete)
+	if (!autocomplete)
 		return {
 			...subcommandData,
 			name,
 			type: Subcommand,
 		};
-	
-	if(typeof autocomplete !== "function")
-		throw new LoadError(
-			name,
-			`Subcommand autocomplete must be a function.`,
-		);
+
+	if (typeof autocomplete !== "function")
+		throw new LoadError(name, `Subcommand autocomplete must be a function.`);
 	return {
 		...subcommandData,
 		name,
@@ -251,34 +264,41 @@ async function createSubCommand(directory: string, name: string): Promise<Subcom
 	};
 }
 
-
-function runCommandGroup(this: CommandGroup, interaction: ChatInputCommandInteraction)
-{
+function runCommandGroup(
+	this: CommandGroup,
+	interaction: ChatInputCommandInteraction,
+) {
 	getSubcommand(this, interaction).run(interaction);
 }
 
-function commandGroupAutocomplete(this: CommandGroup, interaction: AutocompleteInteraction)
-{
+function commandGroupAutocomplete(
+	this: CommandGroup,
+	interaction: AutocompleteInteraction,
+) {
 	getSubcommand(this, interaction).autocompleteHandler?.(interaction);
 }
 
-function getSubcommand(commandGroup: CommandGroup, {options}: ChatInputCommandInteraction | AutocompleteInteraction)
-{
+function getSubcommand(
+	commandGroup: CommandGroup,
+	{ options }: ChatInputCommandInteraction | AutocompleteInteraction,
+) {
 	const group = options.getSubcommandGroup();
 	const subcmd = options.getSubcommand();
 	let subcommands: { [name: string]: Subcommand };
-	if(group)
-	{
-		if(group in commandGroup.subcommandGroups)
+	if (group) {
+		if (group in commandGroup.subcommandGroups)
 			subcommands = commandGroup.subcommandGroups[group].subcommands;
 		else
-			throw new Error(`Received unknown subcommand group: '/${commandGroup.name} ${group}'`);
-	}
-	else
-		subcommands = commandGroup.subcommands;
+			throw new Error(
+				`Received unknown subcommand group: '/${commandGroup.name} ${group}'`,
+			);
+	} else subcommands = commandGroup.subcommands;
 
-	if(subcmd in subcommands)
-		return subcommands[subcmd];
+	if (subcmd in subcommands) return subcommands[subcmd];
 	else
-		throw new Error(`Received unknown subcommand: '/${commandGroup.name} ${group || ""} ${subcmd}'`);
+		throw new Error(
+			`Received unknown subcommand: '/${commandGroup.name} ${
+				group || ""
+			} ${subcmd}'`,
+		);
 }
