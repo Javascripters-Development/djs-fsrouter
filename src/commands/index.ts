@@ -218,7 +218,7 @@ async function createSubCommandGroup(parent: string, groupName: string) {
 					`Subcommand ${groupName}/${name} is missing a 'run' function.`,
 				);
 
-			subcommands[name] = subCmd;
+			subcommands[subCmd.name] = subCmd;
 			options.push(subCmd);
 		}
 	}
