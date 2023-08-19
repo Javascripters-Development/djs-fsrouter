@@ -154,8 +154,8 @@ export function updateCmd(
 	} else {
 		const cmdData = { ...command, options: getOptions(command, id) };
 		if (apiCmd)
-			return apiCmd.edit(cmdData).catch((err: DiscordAPIError) => {
-				if (err.status !== 404) console.error(err);
+			return apiCmd.edit(cmdData).catch((err: Error) => {
+				if(!(err instanceof DiscordAPIError) || err.status !== 404) throw err;
 				else {
 					const newCommand = createCmd(command, guild, true);
 					if(newCommand) return newCommand;
