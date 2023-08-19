@@ -5,6 +5,7 @@ const { Subcommand, SubcommandGroup } = ApplicationCommandOptionType;
 import checkCommand, { NAME_REGEX, LoadError } from "./check.function.js";
 import type { Command, ChatInputHandler } from "../types/config.js";
 import { readdirSync } from "node:fs";
+import { toFileURL } from "./index.js";
 
 export const command: Partial<Command> = {};
 export const commands: { [name: string]: Command } = {};
@@ -40,11 +41,11 @@ export async function load(
 		);
 
 	const folder = `${parentFolder}/${name}`;
-	const ownerCmdFiles = readdirSync(folder).filter((f) => f.endsWith(".js") && f[0] !== "#");
+	const ownerCmdFiles = readdirSync(folder).filter((f) => f.endsWith(".js") && f[0] !== "$");
 	if (!ownerCmdFiles) return false;
 
 	for (const cmd of ownerCmdFiles.map((f) => f.slice(0, -3))) {
-		const {command} = await import(`${folder}/${cmd}`);
+		const {command} = await import(toFileURL(`${folder}/${cmd}`));
 		if (!("type" in command)) command.type = Subcommand;
 		else if (command.type !== Subcommand && command.type !== SubcommandGroup)
 			throw new LoadError(

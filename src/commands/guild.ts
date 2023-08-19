@@ -4,12 +4,13 @@ import type {
 	Snowflake,
 	Client, Guild,
 	ApplicationCommandManager,
-	DiscordAPIError,
 } from "discord.js";
+import { DiscordAPIError } from "discord.js";
 import type { GuildCommand, Middleware } from "../types/config.js";
 // Guild commands, for those that need different options depending on the server
 
 import checkCommand, { LoadError } from "./check.function.js";
+import { toFileURL } from "./index.js";
 
 const guildCommands: { [name: string]: GuildCommand } = {};
 export { guildCommands as commands };
@@ -37,12 +38,12 @@ export async function init(client: Client, folder: string, middleware: Middlewar
 
 	for (const file of require("fs").readdirSync(folder, { withFileTypes: true })) {
 		let { name: fileName } = file;
-		if (fileName[0] === "#" || !fileName.endsWith("js") || !file.isFile()) continue;
+		if (fileName[0] === "$" || !fileName.endsWith("js") || !file.isFile()) continue;
 
 		const name = fileName.slice(0, -3);
 		const command: GuildCommand = {
 			shouldCreateFor: defaultShouldCreateFor,
-			...await import(`${folder}/${fileName}`),
+			...await import(toFileURL(`${folder}/${fileName}`)),
 			name,
 			apiCommands: new Map(),
 		};

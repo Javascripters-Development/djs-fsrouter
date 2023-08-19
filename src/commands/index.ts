@@ -19,6 +19,11 @@ var foldersAreGroups: boolean;
 var defaultDmPermission = false;
 
 import checkCommand, { LoadError } from "./check.function.js";
+import { pathToFileURL } from "node:url";
+
+export function toFileURL(path: string) {
+	return pathToFileURL(path).href;
+}
 
 export const specialFolders: Array<string> = [];
 export const commands: { [name: string]: Command; } = {};
@@ -73,14 +78,14 @@ async function loadFolder(path: string) {
 	for (const file of readdirSync(path, { withFileTypes: true })) {
 		const { name } = file;
 		if (
-			(name[0] === "#" && (name !== "#debug" || skipDebug)) ||
+			(name[0] === "$" && (name !== "$debug" || skipDebug)) ||
 			specialFolders.includes(name)
 		)
 			continue;
 
-		if (file.isFile() && (name.endsWith(".js") || name.endsWith(".ts"))) load(name, subfolder);
+		if (file.isFile() && name.endsWith(".js")) load(name, subfolder);
 		else if (file.isDirectory()) {
-			if (foldersAreGroups && name !== "#debug") await createCommandGroup(name);
+			if (foldersAreGroups && name !== "$debug") await createCommandGroup(name);
 			else loadFolder(`${path}/${name}`);
 		}
 	}
@@ -92,8 +97,6 @@ const readonly = { writable: false, configurable: false, enumerable: true };
 export async function load(name: string, subfolder = "", reloadIfExists = false) {
 	if (name.endsWith(".js")) name = name.slice(0, -3);
 
-	const file = `${root}/${subfolder}/${name}.js`;
-
 	if (commands[name]) {
 		if (commands[name].subfolder !== subfolder)
 			throw new LoadError(
@@ -104,6 +107,7 @@ export async function load(name: string, subfolder = "", reloadIfExists = false)
 		if (!reloadIfExists) return commands[name];
 	}
 
+	const file = toFileURL(`${root}/${subfolder}/${name}.js`);
 	let command: Command = {
 		options: [],
 		dmPermission: defaultDmPermission,
@@ -136,8 +140,8 @@ async function createCommandGroup(cmdName: string) {
 	const subcommands: { [name: string]: Subcommand } = {};
 	const subcommandGroups: { [name: string]: SubcommandGroup } = {};
 	const cmd: CommandGroup = {
-		...(existsSync(`${path}/#info.js`)
-			? await import(`${path}/#info.js`)
+		...(existsSync(`${path}/$info.js`)
+			? await import(toFileURL(`${path}/$info.js`))
 			: { description: `/${cmdName}` }),
 		name: cmdName,
 		options,
@@ -148,16 +152,16 @@ async function createCommandGroup(cmdName: string) {
 
 	for (const file of readdirSync(path, { withFileTypes: true })) {
 		let { name } = file;
-		if (name[0] === "#") continue;
+		if (name[0] === "$") continue;
 
 		if (file.isDirectory()) {
 			const group = await createSubCommandGroup(cmdName, name);
 			options.push(group);
 			subcommandGroups[name] = group;
 		}
-		else if (name.endsWith(".js") || name.endsWith(".ts")) {
+		else if (name.endsWith(".js")) {
 			const subCmd: Subcommand = {
-				...(await import(`${path}/${name}`)).default,
+				...(await import(toFileURL(`${path}/${name}`))).default,
 				name: name.slice(0, -3),
 				type: Subcommand,
 			};
@@ -179,17 +183,17 @@ async function createCommandGroup(cmdName: string) {
 
 async function createSubCommandGroup(parent: string, groupName: string) {
 	const path = `${root}/${parent}/${groupName}`;
-	if (existsSync(`${path}/#info.js`))
+	if (existsSync(`${path}/$info.js`))
 		throw new LoadError(
 			parent,
-			`Subfolder ${groupName} is missing a #info.js file.`,
+			`Subfolder ${groupName} is missing a $info.js file.`,
 		);
 
 	const options: Subcommand[] = [];
 	const subcommands: { [name: string]: Subcommand } = {};
 	const group: SubcommandGroup = {
-		...(existsSync(`${path}/#info.js`)
-			? (await import(`${path}/#info.js`)).default
+		...(existsSync(`${path}/$info.js`)
+			? (await import(toFileURL(`${path}/$info.js`))).default
 			: { description: `/${parent} ${groupName}` }),
 		name: groupName,
 		type: SubcommandGroup,
@@ -199,7 +203,7 @@ async function createSubCommandGroup(parent: string, groupName: string) {
 
 	for (const file of readdirSync(path, { withFileTypes: true })) {
 		let { name } = file;
-		if (name[0] === "#") continue;
+		if (name[0] === "$") continue;
 
 		if (file.isDirectory())
 			throw new LoadError(
@@ -224,7 +228,7 @@ async function createSubCommandGroup(parent: string, groupName: string) {
 }
 
 async function createSubCommand(directory: string, name: string): Promise<Subcommand> {
-	const subcommandData: Omit<Subcommand, "autocompleteHandler"> = await import(`${directory}/${name}`)
+	const subcommandData: Omit<Subcommand, "autocompleteHandler"> = await import(toFileURL(`${directory}/${name}`))
 	const { autocomplete } = subcommandData;
 	name = name.slice(0, -3);
 	if(typeof autocomplete !== "function")

@@ -15,6 +15,7 @@ import { statSync } from "node:fs";
 import { commands, init as initCommands, specialFolders } from "./commands/index.js";
 import { load as loadOwnerCommands, reload as reloadOwnerCommands, command as ownerCommand } from "./commands/owner.js";
 import interactionHandler from "./interactionCreate.js";
+import { fileURLToPath } from "node:url";
 
 export { commands, reload } from "./commands/index.js";
 export * as guildCommands from "./commands/guild.js";
@@ -27,12 +28,16 @@ export async function reloadOwner() {
 	}
 };
 
+export function getPath(metaURL: string, relative: string) {
+	return fileURLToPath(new URL(relative, metaURL));;
+}
+
 let ownerManager: GuildApplicationCommandManager;
 
 export default async function loadCommands(
 	client: Client,
 	{
-		folder = "commands",
+		folder,
 		ownerCommand = "owner",
 		ownerServer: ownerServerId,
 		singleServer,
@@ -40,19 +45,19 @@ export default async function loadCommands(
 		debug = false,
 		defaultDmPermission = false,
 		middleware = [],
-	}: Config = {},
+	}: Config,
 ) {
+	if(!folder)
+		throw new TypeError("You must provide the commands folder.");
+
 	if (!statSync(folder).isDirectory())
 		throw new TypeError("'folder' must be a path to a folder");
 
 	if (middleware && typeof middleware === "function")
 		middleware = [middleware];
 
-	if (folder.endsWith("/") || folder.endsWith("\\"))
-		folder = folder.slice(0, -1);
-
 	if (!folder.startsWith("/") && !folder.match(/^[A-Z]:/))
-		folder = `${import.meta.url}/${folder}`;
+		throw new Error("Relative paths are not supported. Please provide the absolute path to your commands folder.");
 
 	if (singleServer && !ownerServerId)
 		throw new Error("Need to specify the ownerServer is singleServer is set to true.");
@@ -80,13 +85,13 @@ export default async function loadCommands(
 
 	const load = initCommands(client, folder, initOptions);
 
-	if (statSync(folder + "/#guild", { throwIfNoEntry: false })?.isDirectory())
+	if (statSync(folder + "/$guild", { throwIfNoEntry: false })?.isDirectory())
 		load.then(async () => {
 			const {
 				init: initGuildCmds,
 				commands: guildCommands,
 			} = await import("./commands/guild.js");
-			initGuildCmds(client, folder + "/#guild", middleware);
+			initGuildCmds(client, folder + "/$guild", middleware);
 			Object.assign(commands, guildCommands);
 		});
 
