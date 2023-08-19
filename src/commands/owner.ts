@@ -1,5 +1,3 @@
-"use strict";
-
 import { ApplicationCommandOptionType, PermissionResolvable } from "discord.js";
 const { Subcommand, SubcommandGroup } = ApplicationCommandOptionType;
 import checkCommand, { NAME_REGEX, LoadError } from "./check.function.js";

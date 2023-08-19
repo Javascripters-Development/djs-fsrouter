@@ -1,5 +1,3 @@
-"use strict";
-
 import type { Client, GuildApplicationCommandManager } from "discord.js";
 import { ChannelType } from "discord.js";
 export const ALL_TEXT_CHANNEL_TYPES = [
