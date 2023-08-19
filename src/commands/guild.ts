@@ -7,7 +7,7 @@ import type {
 } from "discord.js";
 import { DiscordAPIError } from "discord.js";
 import type { GuildCommand, Middleware } from "../types/config.js";
-// Guild commands, for those that need different options depending on the server
+import { readdirSync } from "node:fs";
 
 import checkCommand, { LoadError } from "./check.function.js";
 import { toFileURL } from "./index.js";
@@ -36,7 +36,7 @@ export function isIn(command: string | GuildCommand, { id }: Guild) {
 export async function init(client: Client, folder: string, middleware: Middleware = []) {
 	if(typeof middleware === "function") middleware = [middleware];
 
-	for (const file of require("fs").readdirSync(folder, { withFileTypes: true })) {
+	for (const file of readdirSync(folder, { withFileTypes: true })) {
 		let { name: fileName } = file;
 		if (fileName[0] === "$" || !fileName.endsWith("js") || !file.isFile()) continue;
 
