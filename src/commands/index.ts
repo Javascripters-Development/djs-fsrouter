@@ -231,6 +231,13 @@ async function createSubCommand(directory: string, name: string): Promise<Subcom
 	const subcommandData: Omit<Subcommand, "autocompleteHandler"> = await import(toFileURL(`${directory}/${name}`))
 	const { autocomplete } = subcommandData;
 	name = name.slice(0, -3);
+	if(!autocomplete)
+		return {
+			...subcommandData,
+			name,
+			type: Subcommand,
+		};
+	
 	if(typeof autocomplete !== "function")
 		throw new LoadError(
 			name,
