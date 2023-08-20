@@ -6,7 +6,8 @@
 		"target": "ESNext",
 		"outDir": "./dist",
 		"declarationDir": "./dist",
-		"isolatedModules": true
+		"isolatedModules": true,
+		"types": ["node"]
 	},
 	"include": ["src/**/*"]
 }

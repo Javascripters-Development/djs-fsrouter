@@ -1,40 +1,41 @@
 {
-	"name": "djs-fsrouter",
-	"version": "0.0.1",
-	"description": "A slash commands system for Discord.js with filesystem routing",
-	"main": "dist/index.js",
-	"type": "module",
-	"scripts": {
-		"build": "tsc",
-		"format": "prettier . --write"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/Javascripters-Development/djs-fsrouter"
-	},
-	"keywords": [
-		"discord",
-		"discord.js",
-		"slash",
-		"commands"
-	],
-	"author": "Jacob Jackso",
-	"contributors": [
-		"Morgân von Brylân"
-	],
-	"license": "GPL-3.0",
-	"engines": {
-		"node": ">=14.0.0"
-	},
-	"peerDependencies": {
-		"discord.js": "~14"
-	},
-	"devDependencies": {
-		"discord.js": "^14.13.0",
-		"prettier": "^3.0.2",
-		"typescript": "^5.1.6"
-	},
-	"files": [
-		"dist"
-	]
+  "name": "djs-fsrouter",
+  "version": "0.0.1",
+  "description": "A slash commands system for Discord.js with filesystem routing",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "format": "prettier . --write"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Javascripters-Development/djs-fsrouter"
+  },
+  "keywords": [
+    "discord",
+    "discord.js",
+    "slash",
+    "commands"
+  ],
+  "author": "Jacob Jackso",
+  "contributors": [
+    "Morgân von Brylân"
+  ],
+  "license": "GPL-3.0",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "peerDependencies": {
+    "discord.js": "~14"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.1",
+    "discord.js": "^14.13.0",
+    "prettier": "^3.0.2",
+    "typescript": "^5.1.6"
+  },
+  "files": [
+    "dist"
+  ]
 }
