@@ -14,6 +14,7 @@ import CommandLoader, { specialFolders } from "./commands/index.js";
 import { load as loadOwnerCommands } from "./commands/owner.js";
 import interactionHandler from "./interactionCreate.js";
 import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 
 export * as guildCommands from "./commands/guild.js";
 
@@ -37,16 +38,11 @@ export default async function loadCommands(
 	}: Config,
 ) {
 	if (!folder) throw new TypeError("You must provide the commands folder.");
-
+	folder = resolve(folder);
 	if (!statSync(folder).isDirectory())
 		throw new TypeError("'folder' must be a path to a folder");
 
 	if (middleware && typeof middleware === "function") middleware = [middleware];
-
-	if (!folder.startsWith("/") && !folder.match(/^[A-Z]:/))
-		throw new Error(
-			"Relative paths are not supported. Please provide the absolute path to your commands folder.",
-		);
 
 	if (singleServer && !ownerServerId)
 		throw new Error(
