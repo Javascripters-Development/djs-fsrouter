@@ -10,11 +10,7 @@ export const ALL_TEXT_CHANNEL_TYPES = [
 import type { Config } from "./types/config.js";
 import type { InitOptions } from "./commands/index.js";
 import { statSync } from "node:fs";
-import {
-	commands,
-	init as initCommands,
-	specialFolders,
-} from "./commands/index.js";
+import CommandLoader, { specialFolders } from "./commands/index.js";
 import {
 	load as loadOwnerCommands,
 	/*reload as reloadOwnerCommands,*/ command as ownerCommand,
@@ -22,7 +18,7 @@ import {
 import interactionHandler from "./interactionCreate.js";
 import { fileURLToPath } from "node:url";
 
-export { commands /*, reload*/ } from "./commands/index.js";
+// export { commands /*, reload*/ } from "./commands/index.js";
 export * as guildCommands from "./commands/guild.js";
 /*
 export async function reloadOwner() {
@@ -76,34 +72,41 @@ export default async function loadCommands(
 		autoSubCommands,
 		defaultDmPermission,
 	};
+	const commandManager = new CommandLoader(client, folder, initOptions);
 	if (ownerServerId) {
 		if (ownerSubfolderExists(ownerCommand)) {
 			specialFolders.push(ownerCommand);
 			const ownerServer = await client.guilds.fetch(ownerServerId);
 			ownerManager = ownerServer.commands;
-			if (singleServer) initOptions.allAsGuild = ownerServer;
 
 			const ownerCmd = await loadOwnerCommands(folder, { name: ownerCommand });
 			if (ownerCmd) {
-				if (singleServer) commands[ownerCommand] = ownerCmd;
+				if (singleServer) commandManager.commands[ownerCommand] = ownerCmd;
 				else ownerManager.set([ownerCmd]);
 			}
 		}
 	}
 
-	const load = initCommands(client, folder, initOptions);
-
+	const load = commandManager.init();
 	if (statSync(folder + "/$guild", { throwIfNoEntry: false })?.isDirectory())
 		load.then(async () => {
 			const { init: initGuildCmds, commands: guildCommands } = await import(
 				"./commands/guild.js"
 			);
-			await initGuildCmds(client, folder + "/$guild", middleware);
-			Object.assign(commands, guildCommands);
+			await initGuildCmds(
+				client,
+				folder + "/$guild",
+				commandManager.middleware,
+			);
+			Object.assign(commandManager.commands, guildCommands);
 		});
 
-	load.then(() => client.on("interactionCreate", interactionHandler));
-
+	load.then(() =>
+		client.on("interactionCreate", (interaction) =>
+			interactionHandler(interaction, commandManager),
+		),
+	);
+	load.then(() => console.log(commandManager.commands));
 	return load;
 
 	function ownerSubfolderExists(name: string) {

@@ -1,9 +1,4 @@
-import type {
-	Snowflake,
-	Client,
-	Guild,
-	ApplicationCommandManager,
-} from "discord.js";
+import type { Snowflake, Client, Guild } from "discord.js";
 import { DiscordAPIError } from "discord.js";
 import type { GuildCommand, Middleware } from "../types/config.js";
 import { readdirSync } from "node:fs";
@@ -35,7 +30,7 @@ export function isIn(command: string | GuildCommand, { id }: Guild) {
 export async function init(
 	client: Client,
 	folder: string,
-	middleware: Middleware = [],
+	middleware: Middleware[] = [],
 ) {
 	if (typeof middleware === "function") middleware = [middleware];
 
