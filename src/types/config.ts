@@ -52,4 +52,5 @@ export interface Config {
 	debug?: boolean;
 	defaultDmPermission?: boolean;
 	middleware?: Middleware | Middleware[];
+	commandFileExtension?: string | string[];
 }

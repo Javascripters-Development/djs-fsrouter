@@ -35,13 +35,15 @@ export default async function loadCommands(
 		debug = false,
 		defaultDmPermission = false,
 		middleware = [],
+		commandFileExtension = ["js"],
 	}: Config,
 ) {
 	if (!folder) throw new TypeError("You must provide the commands folder.");
 	folder = resolve(folder);
 	if (!statSync(folder).isDirectory())
 		throw new TypeError("'folder' must be a path to a folder");
-
+	if (!Array.isArray(commandFileExtension))
+		commandFileExtension = [commandFileExtension];
 	if (middleware && typeof middleware === "function") middleware = [middleware];
 
 	if (singleServer && !ownerServerId)
@@ -54,6 +56,7 @@ export default async function loadCommands(
 		middleware,
 		autoSubCommands,
 		defaultDmPermission,
+		commandFileExtension,
 	};
 	const commandManager = new CommandLoader(client, folder, initOptions);
 	if (ownerServerId) {

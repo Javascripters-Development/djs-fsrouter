@@ -33,6 +33,7 @@ export type InitOptions = {
 	autoSubCommands: boolean;
 	defaultDmPermission: boolean;
 	middleware: Middleware[];
+	commandFileExtension: string[];
 };
 export default class CommandLoader {
 	debug: boolean;
@@ -43,6 +44,7 @@ export default class CommandLoader {
 	commands: Record<string, Command> = {};
 	commandManager?: ApplicationCommandManager | GuildApplicationCommandManager;
 	defaultDmPermission?: boolean;
+	commandFileExtension: string[];
 	constructor(
 		client: Client,
 		folder: string,
@@ -51,8 +53,10 @@ export default class CommandLoader {
 			autoSubCommands = true,
 			middleware = [],
 			defaultDmPermission = true,
+			commandFileExtension = ["js"],
 		}: Partial<InitOptions> = {},
 	) {
+		this.commandFileExtension = commandFileExtension;
 		this.debug = debug;
 		this.autoSubCommands = autoSubCommands;
 		this.middleware = middleware;
@@ -83,7 +87,11 @@ export default class CommandLoader {
 			)
 				continue;
 
-			if (file.isFile() && name.endsWith(".js")) this.load(name, subfolder);
+			if (
+				file.isFile() &&
+				this.commandFileExtension.some((ext) => name.endsWith(`.${ext}`))
+			)
+				this.load(name, subfolder);
 			else if (file.isDirectory()) {
 				if (this.autoSubCommands && name !== "$debug")
 					await this.createCommandGroup(name);
