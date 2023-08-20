@@ -11,24 +11,11 @@ import type { Config } from "./types/config.js";
 import type { InitOptions } from "./commands/index.js";
 import { statSync } from "node:fs";
 import CommandLoader, { specialFolders } from "./commands/index.js";
-import {
-	load as loadOwnerCommands,
-	/*reload as reloadOwnerCommands,*/ command as ownerCommand,
-} from "./commands/owner.js";
+import { load as loadOwnerCommands } from "./commands/owner.js";
 import interactionHandler from "./interactionCreate.js";
 import { fileURLToPath } from "node:url";
 
-// export { commands /*, reload*/ } from "./commands/index.js";
 export * as guildCommands from "./commands/guild.js";
-/*
-export async function reloadOwner() {
-	const { name } = ownerCommand;
-	const command = ownerManager?.cache.find((cmd) => cmd.name === name);
-	if(command) {
-		const newCommand = await reloadOwnerCommands();
-		return newCommand ? command.edit(newCommand) : command.delete();
-	}
-};*/
 
 export function getPath(metaURL: string, relative: string) {
 	return fileURLToPath(new URL(relative, metaURL));
