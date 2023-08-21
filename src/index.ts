@@ -59,13 +59,14 @@ export default async function loadCommands(
 		commandFileExtension,
 	};
 	const commandManager = new CommandLoader(client, folder, initOptions);
+	let ownerCmd: Awaited<ReturnType<typeof loadOwnerCommands>> = false;
 	if (ownerServerId) {
 		if (ownerSubfolderExists(ownerCommand)) {
 			specialFolders.push(ownerCommand);
 			const ownerServer = await client.guilds.fetch(ownerServerId);
 			ownerManager = ownerServer.commands;
 
-			const ownerCmd = await loadOwnerCommands(folder, { name: ownerCommand });
+			ownerCmd = await loadOwnerCommands(folder, { name: ownerCommand });
 			if (ownerCmd) {
 				if (singleServer) commandManager.commands[ownerCommand] = ownerCmd;
 				else ownerManager.set([ownerCmd]);
@@ -78,6 +79,13 @@ export default async function loadCommands(
 			? await client.guilds.fetch(ownerServerId as string)
 			: undefined,
 	);
+	if (ownerCmd && !singleServer) {
+		const ownerCmdClosure = ownerCmd;
+		load.then(
+			() => (commandManager.commands[ownerCmdClosure.name] = ownerCmdClosure),
+		);
+	}
+
 	if (statSync(folder + "/$guild", { throwIfNoEntry: false })?.isDirectory())
 		load.then(async () => {
 			const { init: initGuildCmds, commands: guildCommands } = await import(
