@@ -70,10 +70,8 @@ export default class CommandLoader {
 			this.commandManager = commandManager;
 			try {
 				await this.loadFolder(this.root);
-				console.log(this.commands);
 				await commandManager.set(Object.values(this.commands));
 			} catch (err) {
-				console.log(err);
 				throw new Error(`Error loading commands: ${err}`);
 			}
 		} else {
