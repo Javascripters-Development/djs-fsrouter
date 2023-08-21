@@ -50,7 +50,7 @@ client.once("ready", () => {
         folder: toPath(import.meta.url, "commands"),
         ownerServer: "1234567890123456789",
         defaultDmPermission: true,
-        middleware: (command) => console.log(`Command ${command.name} loaded:`, command.description),
+        middleware: (command) => command,
         commandFileExtension: ["js","ts"]
     });
 });
