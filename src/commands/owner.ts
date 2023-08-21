@@ -13,6 +13,7 @@ type OwnerConfig = {
 	name: string;
 	description: string;
 	defaultMemberPermissions: PermissionResolvable | null;
+	commandFileExtension: string[];
 };
 
 /**
@@ -30,6 +31,7 @@ export async function load(
 		name,
 		description = "Execute an owner command",
 		defaultMemberPermissions = "0",
+		commandFileExtension = ["js"],
 	}: Partial<OwnerConfig> = {},
 ): Promise<Command | false> {
 	if (!name) name = "owner";
@@ -40,11 +42,20 @@ export async function load(
 
 	const folder = `${parentFolder}/${name}`;
 	const ownerCmdFiles = readdirSync(folder).filter(
-		(f) => f.endsWith(".js") && f[0] !== "$",
+		(f) =>
+			commandFileExtension.some((ext) => f.endsWith(`.${ext}`)) && f[0] !== "$",
 	);
 	if (!ownerCmdFiles) return false;
 
-	for (const cmd of ownerCmdFiles.map((f) => f.slice(0, -3))) {
+	for (const cmd of ownerCmdFiles.map((f) =>
+		f.slice(
+			0,
+			-(
+				(commandFileExtension.find((ext) => f.endsWith(`.${ext}`)) as string)
+					.length + 1
+			),
+		),
+	)) {
 		const command = await import(toFileURL(`${folder}/${cmd}`));
 		if (!("type" in command)) command.type = Subcommand;
 		else if (command.type !== Subcommand && command.type !== SubcommandGroup)

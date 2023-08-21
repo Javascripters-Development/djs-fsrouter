@@ -64,16 +64,21 @@ export default class CommandLoader {
 		this.root = folder;
 		this.defaultDmPermission = defaultDmPermission;
 	}
-	init(allAsGuild?: Guild) {
+	async init(allAsGuild?: Guild) {
 		const { commands: commandManager } =
 			allAsGuild || this.client.application || {};
 		if (commandManager) {
 			this.commandManager = commandManager;
-			return this.loadFolder(this.root).then(() =>
-				commandManager.set(Object.values(this.commands)),
-			);
+			try {
+				await this.loadFolder(this.root);
+				console.log(this.commands);
+				await commandManager.set(Object.values(this.commands));
+			} catch (err) {
+				console.log(err);
+				throw new Error(`Error loading commands: ${err}`);
+			}
 		} else {
-			return Promise.reject("Couldn't get a command manager.");
+			throw new Error("Couldn't get a command manager.");
 		}
 	}
 	async loadFolder(path: string) {
@@ -91,16 +96,17 @@ export default class CommandLoader {
 				file.isFile() &&
 				this.commandFileExtension.some((ext) => name.endsWith(`.${ext}`))
 			)
-				this.load(name, subfolder);
+				await this.load(name, subfolder);
 			else if (file.isDirectory()) {
 				if (this.autoSubCommands && name !== "$debug")
 					await this.createCommandGroup(name);
-				else this.loadFolder(`${path}/${name}`);
+				else await this.loadFolder(`${path}/${name}`);
 			}
 		}
 	}
 	async load(name: string, subfolder = "") {
-		if (name.endsWith(".js")) name = name.slice(0, -3);
+		if (this.commandFileExtension.some((ext) => name.endsWith(`.${ext}`)))
+			name = name.split(".")[0];
 
 		if (this.commands[name]) {
 			if (this.commands[name].subfolder !== subfolder)
@@ -153,20 +159,25 @@ export default class CommandLoader {
 				const group = await this.createSubCommandGroup(cmdName, name);
 				options.push(group);
 				subcommandGroups[name] = group;
-			} else if (name.endsWith(".js")) {
-				const subCmd: Subcommand = {
-					...(await import(toFileURL(`${path}/${name}`))),
-					name: name.slice(0, -3),
-					type: Subcommand,
-				};
-				if (typeof subCmd.run !== "function")
-					throw new LoadError(
-						cmdName,
-						`Subcommand ${name} is missing a 'run' function.`,
-					);
+			} else {
+				const ext = this.commandFileExtension.find((ext) =>
+					name.endsWith(`.${ext}`),
+				);
+				if (ext) {
+					const subCmd: Subcommand = {
+						...(await import(toFileURL(`${path}/${name}`))),
+						name: name.slice(0, -(ext.length + 1)),
+						type: Subcommand,
+					};
+					if (typeof subCmd.run !== "function")
+						throw new LoadError(
+							cmdName,
+							`Subcommand ${name} is missing a 'run' function.`,
+						);
 
-				subcommands[name] = subCmd;
-				options.push(subCmd);
+					subcommands[name] = subCmd;
+					options.push(subCmd);
+				}
 			}
 		}
 
@@ -185,9 +196,12 @@ export default class CommandLoader {
 
 		const options: Subcommand[] = [];
 		const subcommands: { [name: string]: Subcommand } = {};
+		const ext: string | undefined = this.commandFileExtension.find(() =>
+			existsSync(`${path}/$info.${ext}`),
+		);
 		const group: SubcommandGroup = {
-			...(existsSync(`${path}/$info.js`)
-				? await import(toFileURL(`${path}/$info.js`))
+			...(ext
+				? await import(toFileURL(`${path}/$info.${ext}`))
 				: { description: `/${parent} ${groupName}` }),
 			name: groupName,
 			type: SubcommandGroup,
@@ -205,7 +219,7 @@ export default class CommandLoader {
 					`Cannot have a subcommand group inside another subcommand group (in '${groupName}')`,
 				);
 
-			if (name.endsWith(".js")) {
+			if (this.commandFileExtension.some((ext) => name.endsWith(`.${ext}`))) {
 				const subCmd = await this.createSubCommand(path, name);
 				if (typeof subCmd.run !== "function")
 					throw new LoadError(
@@ -225,7 +239,16 @@ export default class CommandLoader {
 		const subcommandData: Omit<Subcommand, "autocompleteHandler"> =
 			await import(toFileURL(`${directory}/${name}`));
 		const { autocomplete } = subcommandData;
-		name = name.slice(0, -3);
+		name = name.slice(
+			0,
+			-(
+				(
+					this.commandFileExtension.find((ext) =>
+						name.endsWith(`.${ext}`),
+					) as string
+				).length + 1
+			),
+		);
 		if (!autocomplete)
 			return {
 				...subcommandData,

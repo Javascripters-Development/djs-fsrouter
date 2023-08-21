@@ -73,7 +73,11 @@ export default async function loadCommands(
 		}
 	}
 
-	const load = commandManager.init();
+	const load = commandManager.init(
+		singleServer
+			? await client.guilds.fetch(ownerServerId as string)
+			: undefined,
+	);
 	if (statSync(folder + "/$guild", { throwIfNoEntry: false })?.isDirectory())
 		load.then(async () => {
 			const { init: initGuildCmds, commands: guildCommands } = await import(
@@ -83,6 +87,7 @@ export default async function loadCommands(
 				client,
 				folder + "/$guild",
 				commandManager.middleware,
+				commandFileExtension as string[],
 			);
 			Object.assign(commandManager.commands, guildCommands);
 		});
@@ -92,7 +97,6 @@ export default async function loadCommands(
 			interactionHandler(interaction, commandManager),
 		),
 	);
-	load.then(() => console.log(commandManager.commands));
 	return load;
 
 	function ownerSubfolderExists(name: string) {

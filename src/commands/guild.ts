@@ -31,15 +31,18 @@ export async function init(
 	client: Client,
 	folder: string,
 	middleware: Middleware[] = [],
+	commandFileExtension: string[],
 ) {
 	if (typeof middleware === "function") middleware = [middleware];
 
 	for (const file of readdirSync(folder, { withFileTypes: true })) {
 		let { name: fileName } = file;
-		if (fileName[0] === "$" || !fileName.endsWith("js") || !file.isFile())
-			continue;
+		const ext = commandFileExtension.find((ext) =>
+			fileName.endsWith(`.${ext}`),
+		);
+		if (fileName[0] === "$" || !ext || !file.isFile()) continue;
 
-		const name = fileName.slice(0, -3);
+		const name = fileName.slice(0, -(ext.length - 1));
 		const command: GuildCommand = {
 			shouldCreateFor: defaultShouldCreateFor,
 			...(await import(toFileURL(`${folder}/${fileName}`))),
