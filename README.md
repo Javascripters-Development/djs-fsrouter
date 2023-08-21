@@ -37,6 +37,7 @@ Where `client` is your Discord.js Client, and `options` an object with the follo
 - `debug`: defaults to false. If true, debug commands will not be ignored.
 - `defaultDmPermission`: defaults to false. The default value for dmPermission. Incompatible with `singleServer`.
 - `middleware`: a function or array of functions to apply to each command when it is loaded (excluding owner commands), before it is sent to Discord. Takes the command object as its sole argument.
+- `commandFileExtension`: a string or array of strings representing the file extensions for command files. Defaults to `["js"]`.
 
 All options are... well, optional. You can skip this argument entirely.
 
@@ -50,6 +51,7 @@ client.once("ready", () => {
         ownerServer: "1234567890123456789",
         defaultDmPermission: true,
         middleware: (command) => console.log(`Command ${command.name} loaded:`, command.description),
+        commandFileExtension: ["js","ts"]
     });
 });
 ```
