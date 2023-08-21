@@ -1,6 +1,6 @@
 {
 	"name": "djs-fsrouter",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "A slash commands system for Discord.js with filesystem routing",
 	"main": "dist/index.js",
 	"type": "module",
