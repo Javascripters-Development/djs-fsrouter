@@ -1,10 +1,11 @@
 import type { Snowflake, Client, Guild } from "discord.js";
 import { DiscordAPIError } from "discord.js";
-import type { GuildCommand, Middleware } from "../types/config.js";
+import type { GuildCommand, Middleware } from "../types.js";
 import { readdirSync } from "node:fs";
 
 import checkCommand, { LoadError } from "./check.function.js";
 import { toFileURL } from "./index.js";
+import { importCommand } from "../util.js";
 
 const guildCommands: { [name: string]: GuildCommand } = {};
 export { guildCommands as commands };
@@ -45,7 +46,7 @@ export async function init(
 		const name = fileName.slice(0, -(ext.length - 1));
 		const command: GuildCommand = {
 			shouldCreateFor: defaultShouldCreateFor,
-			...(await import(toFileURL(`${folder}/${fileName}`))),
+			...(await importCommand(toFileURL(`${folder}/${fileName}`))),
 			name,
 			apiCommands: new Map(),
 		};

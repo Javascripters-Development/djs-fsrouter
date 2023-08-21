@@ -5,7 +5,7 @@ import {
 } from "discord.js";
 const { Subcommand, SubcommandGroup } = ApplicationCommandOptionType;
 const { ChatInput } = ApplicationCommandType;
-import type { Command, AutocompleteHandler } from "../types/config.js";
+import type { Command, AutocompleteHandler } from "../types.js";
 
 export const NAME_REGEX = /^[-_\p{L}\p{N}\p{sc=Deva}\p{sc=Thai}]{1,32}$/u;
 

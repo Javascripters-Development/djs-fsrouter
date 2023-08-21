@@ -1,9 +1,10 @@
 import { ApplicationCommandOptionType, PermissionResolvable } from "discord.js";
 const { Subcommand, SubcommandGroup } = ApplicationCommandOptionType;
 import checkCommand, { NAME_REGEX, LoadError } from "./check.function.js";
-import type { Command, ChatInputHandler } from "../types/config.js";
+import type { Command, ChatInputHandler } from "../types.js";
 import { readdirSync } from "node:fs";
 import { toFileURL } from "./index.js";
+import { importCommand } from "../util.js";
 
 export const command: Partial<Command> = {};
 export const commands: { [name: string]: Command } = {};
@@ -56,7 +57,7 @@ export async function load(
 			),
 		),
 	)) {
-		const command = await import(toFileURL(`${folder}/${cmd}`));
+		const command = await importCommand(toFileURL(`${folder}/${cmd}`));
 		if (!("type" in command)) command.type = Subcommand;
 		else if (command.type !== Subcommand && command.type !== SubcommandGroup)
 			throw new LoadError(

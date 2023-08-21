@@ -8,7 +8,7 @@ import type {
 	AutocompleteInteraction,
 	ApplicationCommand,
 } from "discord.js";
-
+type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 export interface Command extends ChatInputApplicationCommandData {
 	run: ChatInputHandler;
 	autocomplete?: AutocompleteHandler;
@@ -54,3 +54,26 @@ export interface Config {
 	middleware?: Middleware | Middleware[];
 	commandFileExtension?: string | string[];
 }
+export type FileCommand = Optional<
+	Omit<Command, "name" | "subfolder">,
+	| "options"
+	| "type"
+	| "autocomplete"
+	| "defaultMemberPermissions"
+	| "descriptionLocalizations"
+	| "dmPermission"
+	| "nameLocalizations"
+	| "nsfw"
+>;
+export type GuildFileCommand = Optional<
+	Omit<GuildCommand, "name" | "subfolder" | "apiCommands">,
+	| "options"
+	| "type"
+	| "autocomplete"
+	| "defaultMemberPermissions"
+	| "descriptionLocalizations"
+	| "dmPermission"
+	| "nameLocalizations"
+	| "nsfw"
+	| "getOptions"
+>;
