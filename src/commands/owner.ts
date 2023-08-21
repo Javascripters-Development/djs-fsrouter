@@ -80,20 +80,3 @@ export async function load(
 		run,
 	});
 }
-
-/**
- * Reloads all owner commands, using the same arguments as the first one.
- * @returns {object} The owner command object, ready te be re-registered.
- */
-/*
-export function reload() {
-	const { name } = command;
-	if (!name)
-		throw new Error(
-			"Cannot reload owner commands unless they have already been loaded.",
-		);
-
-	const { description, defaultMemberPermissions } = command;
-	return load(_parentFolder, { name, description, defaultMemberPermissions });
-};
-*/

@@ -26,7 +26,6 @@ export function toFileURL(path: string) {
 }
 
 export const specialFolders: Array<string> = [];
-//Object.defineProperty(commands, "$reload", { value: reload });
 
 export type InitOptions = {
 	debug: boolean;
