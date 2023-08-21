@@ -142,6 +142,7 @@ export default class CommandLoader {
 			subcommands,
 			subcommandGroups,
 			run: runCommandGroup,
+			autocomplete: commandGroupAutocomplete,
 		};
 
 		for (const file of readdirSync(path, { withFileTypes: true })) {
@@ -263,6 +264,13 @@ function runCommandGroup(
 	interaction: ChatInputCommandInteraction,
 ) {
 	getSubcommand(this, interaction).run(interaction);
+}
+
+function commandGroupAutocomplete(
+	this: CommandGroup,
+	interaction: AutocompleteInteraction,
+) {
+	getSubcommand(this, interaction).autocompleteHandler?.(interaction);
 }
 
 function getSubcommand(
