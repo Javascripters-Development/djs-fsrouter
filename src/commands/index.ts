@@ -192,7 +192,7 @@ export default class CommandLoader {
 
 		const options: Subcommand[] = [];
 		const subcommands: { [name: string]: Subcommand } = {};
-		const ext: string | undefined = this.commandFileExtension.find(() =>
+		const ext: string | undefined = this.commandFileExtension.find((ext) =>
 			existsSync(`${path}/$info.${ext}`),
 		);
 		const group: SubcommandGroup = {
