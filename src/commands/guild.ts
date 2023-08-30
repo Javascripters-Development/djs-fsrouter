@@ -43,7 +43,7 @@ export async function init(
 		);
 		if (fileName[0] === "$" || !ext || !file.isFile()) continue;
 
-		const name = fileName.slice(0, -(ext.length - 1));
+		const name = fileName.slice(0, -(ext.length + 1));
 		const command: GuildCommand = {
 			shouldCreateFor: defaultShouldCreateFor,
 			...(await importCommand(toFileURL(`${folder}/${fileName}`))),
