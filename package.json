@@ -1,6 +1,6 @@
 {
 	"name": "djs-fsrouter",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"description": "A slash commands system for Discord.js with filesystem routing",
 	"main": "dist/index.js",
 	"type": "module",
@@ -13,16 +13,9 @@
 		"type": "git",
 		"url": "https://github.com/Javascripters-Development/djs-fsrouter"
 	},
-	"keywords": [
-		"discord",
-		"discord.js",
-		"slash",
-		"commands"
-	],
+	"keywords": ["discord", "discord.js", "slash", "commands"],
 	"author": "Jacob Jackson",
-	"contributors": [
-		"Morgân von Brylân"
-	],
+	"contributors": ["Morgân von Brylân"],
 	"license": "GPL-3.0",
 	"engines": {
 		"node": ">=16.11.0"
@@ -36,7 +29,5 @@
 		"rome": "^12.1.3",
 		"typescript": "^5.2.2"
 	},
-	"files": [
-		"dist"
-	]
+	"files": ["dist"]
 }
