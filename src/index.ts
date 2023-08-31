@@ -82,18 +82,20 @@ export default async function loadCommands(
 	if (ownerCmd && !singleServer) {
 		const ownerCmdClosure = ownerCmd;
 		load.then(
-			() => (commandManager.commands[ownerCmdClosure.name] = ownerCmdClosure),
+			() => {
+				commandManager.commands[ownerCmdClosure.name] = ownerCmdClosure;
+			},
 		);
 	}
 
-	if (statSync(folder + "/$guild", { throwIfNoEntry: false })?.isDirectory())
+	if (statSync(`${folder}/$guild`, { throwIfNoEntry: false })?.isDirectory())
 		load.then(async () => {
 			const { init: initGuildCmds, commands: guildCommands } = await import(
 				"./commands/guild.js"
 			);
 			await initGuildCmds(
 				client,
-				folder + "/$guild",
+				`${folder}/$guild`,
 				commandManager.middleware,
 				commandFileExtension as string[],
 			);

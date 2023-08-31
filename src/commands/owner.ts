@@ -62,7 +62,7 @@ export async function load(
 		else if (command.type !== Subcommand && command.type !== SubcommandGroup)
 			throw new LoadError(
 				cmd,
-				`Owner commands can only have the Subcommand or SubcommandGroup type.`,
+				"Owner commands can only have the Subcommand or SubcommandGroup type.",
 			);
 		command.name = cmd;
 		checkCommand(command);

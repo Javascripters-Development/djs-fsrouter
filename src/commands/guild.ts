@@ -29,17 +29,18 @@ export function isIn(command: string | GuildCommand, { id }: Guild) {
  * @param {Client} client The Discord.js client
  * @param {string} folder The absolute path of folder where the commands are.
  * @param {function} middleware (optional) A function to run on the commands once they are loaded.
+ * @param {Array} commandFileExtension (optional) An array of acceptable file extensions for commands. Default to ["js"].
  */
 export async function init(
 	client: Client,
 	folder: string,
 	middleware: Middleware[] = [],
-	commandFileExtension: string[],
+	commandFileExtension: string[] = ["js"],
 ) {
 	if (typeof middleware === "function") middleware = [middleware];
 
 	for (const file of readdirSync(folder, { withFileTypes: true })) {
-		let { name: fileName } = file;
+		const { name: fileName } = file;
 		const ext = commandFileExtension.find((ext) =>
 			fileName.endsWith(`.${ext}`),
 		);

@@ -116,7 +116,7 @@ function checkOptions(
 			)
 				throw new LoadError(
 					cmdName,
-					`Subcommand group options can only be subcommands.`,
+					"Subcommand group options can only be subcommands.",
 				);
 			subCommands.forEach(checkCommand);
 		} else if (type === Subcommand) checkCommand(option);
@@ -124,12 +124,12 @@ function checkOptions(
 			if (!autocompleteHandler)
 				throw new LoadError(
 					cmdName,
-					`Command has an autocomplete option, but no autocomplete handler.`,
+					"Command has an autocomplete option, but no autocomplete handler.",
 				);
 			if (typeof autocompleteHandler !== "function")
 				throw new LoadError(
 					cmdName,
-					`Autocomplete handler must be a function.`,
+					"Autocomplete handler must be a function.",
 				);
 			break;
 		}

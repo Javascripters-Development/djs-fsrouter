@@ -131,7 +131,8 @@ export default class CommandLoader {
 		});
 		for (const func of this.middleware) command = func(command);
 		checkCommand(command);
-		return (this.commands[name] = command);
+		this.commands[name] = command;
+		return command;
 	}
 	async createCommandGroup(cmdName: string) {
 		const path = `${this.root}/${cmdName}`;
@@ -152,7 +153,7 @@ export default class CommandLoader {
 		};
 
 		for (const file of readdirSync(path, { withFileTypes: true })) {
-			let { name } = file;
+			const { name } = file;
 			if (name[0] === "$") continue;
 
 			if (file.isDirectory()) {
@@ -210,7 +211,7 @@ export default class CommandLoader {
 		};
 
 		for (const file of readdirSync(path, { withFileTypes: true })) {
-			let { name } = file;
+			const { name } = file;
 			if (name[0] === "$") continue;
 
 			if (file.isDirectory())
@@ -257,7 +258,7 @@ export default class CommandLoader {
 			};
 
 		if (typeof autocomplete !== "function")
-			throw new LoadError(name, `Subcommand autocomplete must be a function.`);
+			throw new LoadError(name, "Subcommand autocomplete must be a function.");
 		return {
 			...subcommandData,
 			name,
