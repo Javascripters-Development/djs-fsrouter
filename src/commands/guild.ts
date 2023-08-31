@@ -1,4 +1,6 @@
 import type { Snowflake, Client, Guild } from "discord.js";
+import { ApplicationCommandType } from "discord.js";
+const { ChatInput } = ApplicationCommandType;
 import { DiscordAPIError } from "discord.js";
 import type { GuildCommand, Middleware } from "../types.js";
 import { readdirSync } from "node:fs";
@@ -45,6 +47,7 @@ export async function init(
 
 		const name = fileName.slice(0, -(ext.length + 1));
 		const command: GuildCommand = {
+			type: ChatInput,
 			shouldCreateFor: defaultShouldCreateFor,
 			...(await importCommand(toFileURL(`${folder}/${fileName}`))),
 			name,

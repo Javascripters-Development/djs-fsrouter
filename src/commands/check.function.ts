@@ -3,16 +3,16 @@ import {
 	ApplicationCommandType,
 	type ApplicationCommandSubCommandData,
 } from "discord.js";
-const { Subcommand, SubcommandGroup } = ApplicationCommandOptionType;
 const { ChatInput } = ApplicationCommandType;
-import type { Command, AutocompleteHandler } from "../types.js";
+const { Subcommand, SubcommandGroup } = ApplicationCommandOptionType;
+import type { Command, ChatInputCommand, AutocompleteHandler } from "../types.js";
 
 export const NAME_REGEX = /^[-_\p{L}\p{N}\p{sc=Deva}\p{sc=Thai}]{1,32}$/u;
 
 export class LoadError extends Error {
 	commandName: string;
 	constructor(commandName: string, message: string) {
-		super(message);
+		super(`Error loading ${commandName}:\n${message}`);
 		this.commandName = commandName;
 	}
 }
@@ -28,7 +28,7 @@ export default function checkCommand(
 	if (name !== name.toLowerCase())
 		throw new LoadError(name, "Command names must be lowercase.");
 
-	const { description, type = ChatInput } = command;
+	const { type } = command;
 
 	if (
 		"run" in command &&
@@ -38,11 +38,12 @@ export default function checkCommand(
 		throw new LoadError(name, "Missing a 'run' function.");
 
 	if (type === ChatInput || type === Subcommand) {
-		if (!description) throw new LoadError(name, `Missing description.`);
+		const { description } = command;
+		if (!description) throw new LoadError(name, "Missing description.");
 		if (typeof description !== "string")
 			throw new LoadError(name, "The description must be a string.");
 		if (description.length < 4)
-			throw new LoadError(name, `Description too short.`);
+			throw new LoadError(name, "Description too short.");
 		if (description.length > 100)
 			throw new LoadError(
 				name,
@@ -64,7 +65,7 @@ export default function checkCommand(
 
 function checkOptions(
 	cmdName: string,
-	options: Command["options"],
+	options: ChatInputCommand["options"],
 	autocompleteHandler?: AutocompleteHandler,
 ) {
 	if (!Array.isArray(options))

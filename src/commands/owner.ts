@@ -1,13 +1,13 @@
 import { ApplicationCommandOptionType, PermissionResolvable } from "discord.js";
 const { Subcommand, SubcommandGroup } = ApplicationCommandOptionType;
 import checkCommand, { NAME_REGEX, LoadError } from "./check.function.js";
-import type { Command, ChatInputHandler } from "../types.js";
+import type { ChatInputCommand, ChatInputHandler } from "../types.js";
 import { readdirSync } from "node:fs";
 import { toFileURL } from "./index.js";
 import { importCommand } from "../util.js";
 
-export const command: Partial<Command> = {};
-export const commands: { [name: string]: Command } = {};
+export const command: Partial<ChatInputCommand> = {};
+export const commands: { [name: string]: ChatInputCommand } = {};
 let _parentFolder: string;
 
 type OwnerConfig = {
@@ -34,7 +34,7 @@ export async function load(
 		defaultMemberPermissions = "0",
 		commandFileExtension = ["js"],
 	}: Partial<OwnerConfig> = {},
-): Promise<Command | false> {
+): Promise<ChatInputCommand | false> {
 	if (!name) name = "owner";
 	else if (!NAME_REGEX.test(name))
 		throw new Error(

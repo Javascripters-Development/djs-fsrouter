@@ -2,11 +2,13 @@ import {
 	Client,
 	ApplicationCommandManager,
 	GuildApplicationCommandManager,
+	ApplicationCommandType,
 	ApplicationCommandOptionType,
 	ChatInputCommandInteraction,
 	AutocompleteInteraction,
 	Guild,
 } from "discord.js";
+const { ChatInput } = ApplicationCommandType;
 const { Subcommand, SubcommandGroup } = ApplicationCommandOptionType;
 import type {
 	Command,
@@ -116,12 +118,13 @@ export default class CommandLoader {
 
 		const file = toFileURL(`${this.root}/${subfolder}/${name}.js`);
 		let command: Command = {
-			options: [],
+			type: ChatInput,
 			dmPermission: this.defaultDmPermission,
 			...(await importCommand(file)),
 			name,
 			subfolder,
 		};
+		if (command.type === ChatInput && !command.options) command.options = [];
 		Object.defineProperties(command, {
 			name: readonly,
 			subfolder: readonly,
@@ -140,6 +143,7 @@ export default class CommandLoader {
 				? await importCommand(toFileURL(`${path}/$info.js`))
 				: { description: `/${cmdName}` }),
 			name: cmdName,
+			type: ChatInput,
 			options,
 			subcommands,
 			subcommandGroups,
@@ -311,8 +315,7 @@ function getSubcommand(
 	if (subcmd in subcommands) return subcommands[subcmd];
 	else
 		throw new Error(
-			`Received unknown subcommand: '/${commandGroup.name} ${
-				group || ""
+			`Received unknown subcommand: '/${commandGroup.name} ${group || ""
 			} ${subcmd}'`,
 		);
 }
