@@ -7,7 +7,13 @@ export const ALL_TEXT_CHANNEL_TYPES = [
 	ChannelType.GuildAnnouncement,
 	ChannelType.AnnouncementThread,
 ];
-import type { Config, GuildFileCommand, FileCommand } from "./types.js";
+import type {
+	Config,
+	GuildFileCommand,
+	FileCommand,
+	MessageFileCommand,
+	UserFileCommand,
+} from "./types.js";
 import type { InitOptions } from "./commands/index.js";
 import { statSync } from "node:fs";
 import CommandLoader, { specialFolders } from "./commands/index.js";
@@ -119,4 +125,9 @@ export default async function loadCommands(
 		return true;
 	}
 }
-export type { GuildFileCommand as GuildCommand, FileCommand as Command };
+export type {
+	GuildFileCommand as GuildCommand,
+	FileCommand as Command,
+	MessageFileCommand as MessageCommand,
+	UserFileCommand as UserCommand,
+};

@@ -100,3 +100,5 @@ export type GuildFileCommand = Optional<
 	| "nsfw"
 	| "getOptions"
 >;
+export type MessageFileCommand = Omit<MessageCommand, "name" | "subfolder">;
+export type UserFileCommand = Omit<UserCommand, "name" | "subfolder">;
