@@ -316,7 +316,8 @@ function getSubcommand(
 	if (subcmd in subcommands) return subcommands[subcmd];
 	else
 		throw new Error(
-			`Received unknown subcommand: '/${commandGroup.name} ${group || ""
+			`Received unknown subcommand: '/${commandGroup.name} ${
+				group || ""
 			} ${subcmd}'`,
 		);
 }

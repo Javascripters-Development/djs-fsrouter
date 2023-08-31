@@ -1,5 +1,9 @@
 import CommandLoader from "./commands/index.js";
-import { type Interaction, InteractionType, ApplicationCommandType } from "discord.js";
+import {
+	type Interaction,
+	InteractionType,
+	ApplicationCommandType,
+} from "discord.js";
 const { ChatInput, Message, User } = ApplicationCommandType;
 export default async (
 	interaction: Interaction,
@@ -20,8 +24,7 @@ export default async (
 				console.error(
 					`Received autocomplete interaction for a non-ChatInput command (${command.name})`,
 				);
-			}
-			else if (typeof command.autocomplete === "function")
+			} else if (typeof command.autocomplete === "function")
 				command.autocomplete(interaction);
 			else
 				console.error(
@@ -31,13 +34,16 @@ export default async (
 			// Repetition unfortunately needed to not confuse TypeScript
 			if (interaction.isChatInputCommand() && command.type === ChatInput)
 				command.run(interaction);
-			else if (interaction.isMessageContextMenuCommand() && command.type === Message)
+			else if (
+				interaction.isMessageContextMenuCommand() &&
+				command.type === Message
+			)
 				command.run(interaction);
 			else if (interaction.isUserContextMenuCommand() && command.type === User)
 				command.run(interaction);
 			else
 				console.error(
-					`Received command interaction of type ${interaction.type} for a command of type ${command.type}`
+					`Received command interaction of type ${interaction.type} for a command of type ${command.type}`,
 				);
 		}
 	}

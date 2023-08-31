@@ -81,11 +81,9 @@ export default async function loadCommands(
 	);
 	if (ownerCmd && !singleServer) {
 		const ownerCmdClosure = ownerCmd;
-		load.then(
-			() => {
-				commandManager.commands[ownerCmdClosure.name] = ownerCmdClosure;
-			},
-		);
+		load.then(() => {
+			commandManager.commands[ownerCmdClosure.name] = ownerCmdClosure;
+		});
 	}
 
 	if (statSync(`${folder}/$guild`, { throwIfNoEntry: false })?.isDirectory())
