@@ -28,6 +28,8 @@ export function toFileURL(path: string) {
 	return pathToFileURL(path).href;
 }
 
+const READONLY = { writable: false, configurable: false, enumerable: true };
+
 export const specialFolders: Array<string> = [];
 
 export type InitOptions = {
@@ -126,8 +128,8 @@ export default class CommandLoader {
 		};
 		if (command.type === ChatInput && !command.options) command.options = [];
 		Object.defineProperties(command, {
-			name: readonly,
-			subfolder: readonly,
+			name: READONLY,
+			subfolder: READONLY,
 		});
 		for (const func of this.middleware) command = func(command);
 		checkCommand(command);
@@ -268,9 +270,6 @@ export default class CommandLoader {
 		};
 	}
 }
-
-
-const readonly = { writable: false, configurable: false, enumerable: true };
 
 function runCommandGroup(
 	this: CommandGroup,
