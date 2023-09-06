@@ -159,7 +159,7 @@ export default class CommandLoader {
 			if (file.isDirectory()) {
 				const group = await this.createSubCommandGroup(cmdName, name);
 				options.push(group);
-				subcommandGroups[name] = group;
+				subcommandGroups[group.name] = group;
 			} else {
 				const ext = this.commandFileExtension.find((ext) =>
 					name.endsWith(`.${ext}`),
