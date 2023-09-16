@@ -28,6 +28,8 @@ export function toFileURL(path: string) {
 	return pathToFileURL(path).href;
 }
 
+const READONLY = { writable: false, configurable: false, enumerable: true };
+
 export const specialFolders: Array<string> = [];
 
 export type InitOptions = {
@@ -126,8 +128,8 @@ export default class CommandLoader {
 		};
 		if (command.type === ChatInput && !command.options) command.options = [];
 		Object.defineProperties(command, {
-			name: readonly,
-			subfolder: readonly,
+			name: READONLY,
+			subfolder: READONLY,
 		});
 		for (const func of this.middleware) command = func(command);
 		checkCommand(command);
@@ -159,7 +161,7 @@ export default class CommandLoader {
 			if (file.isDirectory()) {
 				const group = await this.createSubCommandGroup(cmdName, name);
 				options.push(group);
-				subcommandGroups[name] = group;
+				subcommandGroups[group.name] = group;
 			} else {
 				const ext = this.commandFileExtension.find((ext) =>
 					name.endsWith(`.${ext}`),
@@ -268,20 +270,6 @@ export default class CommandLoader {
 		};
 	}
 }
-
-/**
- * Load all the commands to Discord.
- * @param {Client} client The Discord.js client
- * @param {string} folder The absolute path of folder where the commands are.
- * @param {object} options Additional options
- * @param {boolean|string} options.debug Enable debug mode (all commands defined as guild commands; if debug is a server id, that server is used, otherwise the first one in the cache is used)
- * @param {Guild} options.allAsGuild If defined, all commands will be defined as guild commands of this guild.
- * @param {boolean} options.autoSubCommands If true, folders will be treated as subcommand groups.
- * @param {function} options.middleware (optional) A function to run on the commands just before they are sent to Discord.
- * @returns {Promise <Collection <Snowflake, ApplicationCommand>>}
- */
-
-const readonly = { writable: false, configurable: false, enumerable: true };
 
 function runCommandGroup(
 	this: CommandGroup,
