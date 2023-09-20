@@ -6,7 +6,6 @@ import type { GuildCommand, Middleware } from "../types.js";
 import { readdirSync } from "node:fs";
 
 import checkCommand, { LoadError } from "./check.function.js";
-import { toFileURL } from "./index.js";
 import { importCommand } from "../util.js";
 
 const guildCommands: { [name: string]: GuildCommand } = {};
@@ -50,7 +49,7 @@ export async function init(
 		const command: GuildCommand = {
 			type: ChatInput,
 			shouldCreateFor: defaultShouldCreateFor,
-			...(await importCommand(toFileURL(`${folder}/${fileName}`))),
+			...(await importCommand(`${folder}/${fileName}`)),
 			name,
 			apiCommands: new Map(),
 		};
