@@ -3,7 +3,6 @@ const { Subcommand, SubcommandGroup } = ApplicationCommandOptionType;
 import checkCommand, { NAME_REGEX, LoadError } from "./check.function.js";
 import type { ChatInputCommand, ChatInputHandler } from "../types.js";
 import { readdirSync } from "node:fs";
-import { toFileURL } from "./index.js";
 import { importCommand } from "../util.js";
 
 export const command: Partial<ChatInputCommand> = {};
@@ -57,7 +56,7 @@ export async function load(
 			),
 		),
 	)) {
-		const command = await importCommand(toFileURL(`${folder}/${cmd}`));
+		const command = await importCommand(`${folder}/${cmd}`);
 		if (!("type" in command)) command.type = Subcommand;
 		else if (command.type !== Subcommand && command.type !== SubcommandGroup)
 			throw new LoadError(
