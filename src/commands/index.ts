@@ -139,8 +139,8 @@ export default class CommandLoader {
 	async createCommandGroup(cmdName: string) {
 		const path = `${this.root}/${cmdName}`;
 		const options: (Subcommand | SubcommandGroup)[] = [];
-		const subcommands: { [name: string]: Subcommand } = {};
-		const subcommandGroups: { [name: string]: SubcommandGroup } = {};
+		const subcommands: { [name: string]: Subcommand; } = {};
+		const subcommandGroups: { [name: string]: SubcommandGroup; } = {};
 		const cmd: CommandGroup = {
 			...(existsSync(`${path}/$info.js`)
 				? await importCommand(toFileURL(`${path}/$info.js`))
@@ -198,7 +198,7 @@ export default class CommandLoader {
 			);
 
 		const options: Subcommand[] = [];
-		const subcommands: { [name: string]: Subcommand } = {};
+		const subcommands: { [name: string]: Subcommand; } = {};
 		const ext: string | undefined = this.commandFileExtension.find((ext) =>
 			existsSync(`${path}/$info.${ext}`),
 		);
@@ -252,21 +252,12 @@ export default class CommandLoader {
 				).length + 1
 			),
 		);
-		if (!autocomplete)
-			return {
-				...subcommandData,
-				name,
-				type: Subcommand,
-			};
-
-		if (typeof autocomplete !== "function")
+		if (autocomplete && typeof autocomplete !== "function")
 			throw new LoadError(name, "Subcommand autocomplete must be a function.");
 		return {
 			...subcommandData,
 			name,
 			type: Subcommand,
-			autocompleteHandler: autocomplete,
-			autocomplete: !!autocomplete,
 		};
 	}
 }
@@ -291,7 +282,7 @@ function getSubcommand(
 ) {
 	const group = options.getSubcommandGroup();
 	const subcmd = options.getSubcommand();
-	let subcommands: { [name: string]: Subcommand };
+	let subcommands: { [name: string]: Subcommand; };
 	if (group) {
 		if (group in commandGroup.subcommandGroups)
 			subcommands = commandGroup.subcommandGroups[group].subcommands;
