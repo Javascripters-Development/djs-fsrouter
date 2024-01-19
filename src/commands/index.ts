@@ -266,7 +266,9 @@ function commandGroupAutocomplete(
 	this: CommandGroup,
 	interaction: AutocompleteInteraction,
 ) {
-	getSubcommand(this, interaction).autocomplete?.(interaction);
+	const { autocomplete, name } = getSubcommand(this, interaction);
+	if (autocomplete) autocomplete(interaction);
+	else console.warn(`Got autocomplete for subcommand ${name} which doesn't have an autocomplete handler.`);
 }
 
 function getSubcommand(
