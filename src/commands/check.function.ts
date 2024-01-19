@@ -123,7 +123,8 @@ function checkOptions(
 					"Subcommand group options can only be subcommands.",
 				);
 			subCommands.forEach(checkCommand);
-		} else if (type === Subcommand) checkCommand(option);
+		}
+		else if (type === Subcommand) checkCommand(option);
 		else if (option.autocomplete) {
 			if (!autocomplete)
 				throw new LoadError(

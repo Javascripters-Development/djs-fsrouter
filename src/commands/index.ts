@@ -233,8 +233,7 @@ export default class CommandLoader {
 	}
 
 	async createSubCommand(directory: string, name: string): Promise<Subcommand> {
-		const subcommandData: Omit<Subcommand, "autocompleteHandler"> =
-			await importCommand(`${directory}/${name}`);
+		const subcommandData = await importCommand(`${directory}/${name}`);
 		const { autocomplete } = subcommandData;
 		name = name.slice(
 			0,
@@ -267,7 +266,7 @@ function commandGroupAutocomplete(
 	this: CommandGroup,
 	interaction: AutocompleteInteraction,
 ) {
-	getSubcommand(this, interaction).autocompleteHandler?.(interaction);
+	getSubcommand(this, interaction).autocomplete?.(interaction);
 }
 
 function getSubcommand(
