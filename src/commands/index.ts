@@ -21,12 +21,7 @@ import type {
 import { readdirSync, existsSync } from "node:fs";
 
 import checkCommand, { LoadError } from "./check.function.js";
-import { pathToFileURL } from "node:url";
 import { importCommand } from "../util.js";
-
-export function toFileURL(path: string) {
-	return pathToFileURL(path).href;
-}
 
 const READONLY = { writable: false, configurable: false, enumerable: true };
 
@@ -118,11 +113,10 @@ export default class CommandLoader {
 				);
 		}
 
-		const file = toFileURL(`${this.root}/${subfolder}/${name}.js`);
 		let command: Command = {
 			type: ChatInput,
 			dmPermission: this.defaultDmPermission,
-			...(await importCommand(file)),
+			...(await importCommand(`${this.root}/${subfolder}/${name}.js`)),
 			name,
 			subfolder,
 		};
@@ -143,7 +137,7 @@ export default class CommandLoader {
 		const subcommandGroups: { [name: string]: SubcommandGroup } = {};
 		const cmd: CommandGroup = {
 			...(existsSync(`${path}/$info.js`)
-				? await importCommand(toFileURL(`${path}/$info.js`))
+				? await importCommand(`${path}/$info.js`)
 				: { description: `/${cmdName}` }),
 			name: cmdName,
 			type: ChatInput,
@@ -168,7 +162,7 @@ export default class CommandLoader {
 				);
 				if (ext) {
 					const subCmd: Subcommand = {
-						...(await importCommand(toFileURL(`${path}/${name}`))),
+						...(await importCommand(`${path}/${name}`)),
 						name: name.slice(0, -(ext.length + 1)),
 						type: Subcommand,
 					};
@@ -204,7 +198,7 @@ export default class CommandLoader {
 		);
 		const group: SubcommandGroup = {
 			...(ext
-				? await importCommand(toFileURL(`${path}/$info.${ext}`))
+				? await importCommand(`${path}/$info.${ext}`)
 				: { description: `/${parent} ${groupName}` }),
 			name: groupName,
 			type: SubcommandGroup,
@@ -240,7 +234,7 @@ export default class CommandLoader {
 
 	async createSubCommand(directory: string, name: string): Promise<Subcommand> {
 		const subcommandData: Omit<Subcommand, "autocompleteHandler"> =
-			await importCommand(toFileURL(`${directory}/${name}`));
+			await importCommand(`${directory}/${name}`);
 		const { autocomplete } = subcommandData;
 		name = name.slice(
 			0,
