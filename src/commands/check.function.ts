@@ -70,7 +70,7 @@ export default function checkCommand(
 function checkOptions(
 	cmdName: string,
 	options: ChatInputCommand["options"],
-	autocompleteHandler?: AutocompleteHandler,
+	autocomplete?: AutocompleteHandler,
 ) {
 	if (!Array.isArray(options))
 		throw new LoadError(cmdName, "'options' must be an Array.");
@@ -114,7 +114,7 @@ function checkOptions(
 				);
 			if (
 				subCommands.some(
-					({ type }: { type: ApplicationCommandOptionType }) =>
+					({ type }: { type: ApplicationCommandOptionType; }) =>
 						type !== Subcommand,
 				)
 			)
@@ -125,12 +125,12 @@ function checkOptions(
 			subCommands.forEach(checkCommand);
 		} else if (type === Subcommand) checkCommand(option);
 		else if (option.autocomplete) {
-			if (!autocompleteHandler)
+			if (!autocomplete)
 				throw new LoadError(
 					cmdName,
 					"Command has an autocomplete option, but no autocomplete handler.",
 				);
-			if (typeof autocompleteHandler !== "function")
+			if (typeof autocomplete !== "function")
 				throw new LoadError(
 					cmdName,
 					"Autocomplete handler must be a function.",
