@@ -27,8 +27,7 @@ export interface SubcommandGroup extends ApplicationCommandSubGroupData {
 export interface Subcommand
 	extends Omit<ApplicationCommandSubCommandData, "autocomplete"> {
 	run: ChatInputHandler;
-	autocomplete?: boolean | AutocompleteHandler;
-	autocompleteHandler?: AutocompleteHandler;
+	autocomplete?: AutocompleteHandler;
 }
 export interface CommandGroup extends ChatInputCommand {
 	subcommandGroups: { [name: string]: SubcommandGroup };
