@@ -92,7 +92,7 @@ export async function init(
 			.set(
 				Object.values(guildCommands)
 					.filter((cmd) => cmd.shouldCreateFor(id))
-					.map((cmd) => ({ ...cmd, options: cmd.getOptions?.(id) || [] })),
+					.map((cmd) => ({ ...cmd, options: getOptions(cmd, id) })),
 			)
 			.then((apiCommands) => {
 				for (const apiCmd of apiCommands.values())
